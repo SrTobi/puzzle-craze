@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "id": "first-light",
+  "name": "First light",
+  "description": "Every little tangle has a way out.",
+  "difficulty": "easy",
+  "grid": { "columns": 13, "rows": 11 },
+  "arrows": [
+    {
+      "id": "iris",
+      "color": "violet",
+      "points": [
+        [0, 3],
+        [0, 0],
+        [3, 0],
+        [3, 2]
+      ]
+    },
+    {
+      "id": "poppy",
+      "color": "coral",
+      "points": [
+        [4, 0],
+        [8, 0],
+        [8, 2],
+        [6, 2]
+      ]
+    },
+    {
+      "id": "sunbeam",
+      "color": "gold",
+      "points": [
+        [10, 0],
+        [12, 0],
+        [12, 3],
+        [10, 3]
+      ]
+    },
+    {
+      "id": "lagoon",
+      "color": "teal",
+      "points": [
+        [1, 2],
+        [1, 4],
+        [5, 4]
+      ]
+    },
+    {
+      "id": "meadow",
+      "color": "teal",
+      "points": [
+        [7, 3],
+        [7, 5],
+        [10, 5],
+        [10, 4],
+        [12, 4]
+      ]
+    },
+    {
+      "id": "sky",
+      "color": "blue",
+      "points": [
+        [0, 5],
+        [3, 5],
+        [3, 7],
+        [0, 7]
+      ]
+    },
+    {
+      "id": "bloom",
+      "color": "pink",
+      "points": [
+        [6, 3],
+        [6, 6],
+        [4, 6],
+        [4, 8]
+      ]
+    },
+    {
+      "id": "honey",
+      "color": "gold",
+      "points": [
+        [12, 5],
+        [12, 7],
+        [9, 7],
+        [9, 6]
+      ]
+    },
+    {
+      "id": "lilac",
+      "color": "violet",
+      "points": [
+        [0, 8],
+        [0, 10],
+        [2, 10],
+        [2, 8]
+      ]
+    },
+    {
+      "id": "mint",
+      "color": "teal",
+      "points": [
+        [3, 10],
+        [3, 9],
+        [7, 9],
+        [7, 10]
+      ]
+    },
+    {
+      "id": "peach",
+      "color": "coral",
+      "points": [
+        [8, 8],
+        [10, 8],
+        [10, 10],
+        [8, 10]
+      ]
+    },
+    {
+      "id": "ripple",
+      "color": "blue",
+      "points": [
+        [11, 9],
+        [11, 10],
+        [12, 10],
+        [12, 8]
+      ]
+    }
+  ]
+}
