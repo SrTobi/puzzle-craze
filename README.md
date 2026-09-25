@@ -2,11 +2,11 @@
 
 A collection of browser games built with React, TypeScript, and Vite. The landing page introduces each game; each game has its own page and source directory.
 
-| Page                      | URL                     | Source                 |
-| ------------------------- | ----------------------- | ---------------------- |
-| Title page                | `/`                     | `index.html`, `src/`   |
-| Arrow Surgery             | `/games/arrow-surgery/` | `games/arrow-surgery/` |
-| Logic Snake (coming soon) | `/games/logic-snake/`   | `games/logic-snake/`   |
+| Page          | URL                     | Source                 |
+| ------------- | ----------------------- | ---------------------- |
+| Title page    | `/`                     | `index.html`, `src/`   |
+| Arrow Surgery | `/games/arrow-surgery/` | `games/arrow-surgery/` |
+| Logic Snake   | `/games/logic-snake/`   | `games/logic-snake/`   |
 
 ## Development
 
@@ -32,7 +32,7 @@ index.html                 Landing page entry and metadata
 src/                       Landing page UI and styles
 games/
   arrow-surgery/           Existing game, tests, levels, worker, and design docs
-  logic-snake/             Second game's page and development placeholder
+  logic-snake/             Snake deduction puzzles, rules, saved progress, and tests
 shared/
   components/             Reusable site UI
   styles/                 Fonts, base styles, and site layout
@@ -43,7 +43,7 @@ public/                    Site-wide static assets
 
 The root package, lockfile, TypeScript, Vite, formatting, and Nix configuration are shared infrastructure. Keep game-specific logic, styles, assets, and tests inside its game folder. Put code in `shared/` when it is useful across pages; shared code should not import a game's internals. Game styles load only on that game's page. Fonts are bundled locally.
 
-See [Arrow Surgery's guide](games/arrow-surgery/README.md) for gameplay, level formats, and generation details, and [Logic Snake's notes](games/logic-snake/README.md) for its starting point.
+See [Arrow Surgery's guide](games/arrow-surgery/README.md) for gameplay, level formats, and generation details, and [Logic Snake's guide](games/logic-snake/README.md) for its rules and controls.
 
 ## Building and hosting
 
