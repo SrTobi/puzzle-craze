@@ -81,8 +81,31 @@ describe('snake and region rules', () => {
     expect(analyze(level, extra).solved).toBe(false);
   });
   it('requires correct region sizes even when the endpoints are connected', () => {
+    for (const emptyRow of ['???', '...']) {
+      const level = fixture(['X+X', emptyRow], 2);
+      const result = analyze(level, level.solution);
+      expect(result.solved).toBe(false);
+      expect([0, 1, 2].every((i) => result.errors.has(i))).toBe(true);
+      expect(result.messages).toContain(
+        'The endpoints are connected, but the puzzle is not solved.',
+      );
+    }
+  });
+  it('marks the entire connected snake including branches', () => {
+    const level = fixture(['X+X', '?+?']);
+    const result = analyze(level, level.solution);
+    expect([0, 1, 2, 4].every((i) => result.errors.has(i))).toBe(true);
+    expect(result.errors.has(3)).toBe(false);
+    expect(result.errors.has(5)).toBe(false);
+  });
+  it('clears the connected-snake error when the path is reopened', () => {
     const level = fixture(['X+X', '???'], 2);
-    expect(analyze(level, level.solution).solved).toBe(false);
+    const reopened = markCell(level, level.solution, 1, 'erase');
+    expect(analyze(level, reopened).errors.size).toBe(0);
+  });
+  it('does not mark a disconnected unfinished snake as a connected-snake error', () => {
+    const level = fixture(['X+?', '???', '?+X']);
+    expect(analyze(level, level.solution).errors.size).toBe(0);
   });
   it('undoes an inferred win without keeping automatically displayed empty marks', () => {
     const level = levels[0];

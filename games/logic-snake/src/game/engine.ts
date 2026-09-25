@@ -95,6 +95,7 @@ function analyzeBoard(level: Level, board: Cell[]) {
   }
   const snakeVisited = new Set<number>();
   let components = 0;
+  let connectedSnake: number[] = [];
   for (const start of snakeCells) {
     if (snakeVisited.has(start)) continue;
     components++;
@@ -108,6 +109,7 @@ function analyzeBoard(level: Level, board: Cell[]) {
         }
       }
     }
+    if (group.filter((i) => board[i] === 'head').length === 2) connectedSnake = group;
     if (group.every((i) => neighbors(level, i).filter((n) => isSnake(board[n])).length === 2)) {
       group.forEach((i) => errors.add(i));
       messages.add('The snake forms a loop. It needs to connect the two endpoints.');
@@ -120,20 +122,27 @@ function analyzeBoard(level: Level, board: Cell[]) {
     components === 1 &&
     board.filter((cell) => cell === 'head').length === 2 &&
     used.every((count) => count === 1);
-  return { regions, used, errors, messages: [...messages], unknown, solved };
+  return { regions, used, errors, messages: [...messages], unknown, solved, connectedSnake };
 }
 
 export function analyze(level: Level, board: Cell[]) {
-  const current = analyzeBoard(level, board);
-  if (current.unknown === 0 || current.errors.size > 0) return current;
+  const { connectedSnake, ...current } = analyzeBoard(level, board);
 
   // Crosses are optional: a finished snake determines every remaining empty cell.
-  // Only expose inferred regions when the entire board satisfies the rules.
-  const completed = analyzeBoard(
-    level,
-    board.map((cell) => (cell === 'unknown' ? 'empty' : cell)),
-  );
-  return completed.solved ? { ...completed, unknown: current.unknown } : current;
+  // Check this before flagging a connected snake, so valid solutions stay green.
+  if (current.unknown > 0 && current.errors.size === 0) {
+    const completed = analyzeBoard(
+      level,
+      board.map((cell) => (cell === 'unknown' ? 'empty' : cell)),
+    );
+    if (completed.solved)
+      return { ...current, regions: completed.regions, used: completed.used, solved: true };
+  }
+  if (!current.solved && connectedSnake.length > 0) {
+    connectedSnake.forEach((i) => current.errors.add(i));
+    current.messages.push('The endpoints are connected, but the puzzle is not solved.');
+  }
+  return current;
 }
 
 // Hints use the source puzzle's recorded solve order, correcting mistakes first.

@@ -14,6 +14,8 @@ import {
   Route,
   Sparkles,
   Undo2,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 import { GameBreadcrumb } from '../../../shared/components/GameBreadcrumb';
@@ -30,11 +32,13 @@ import {
   type Level,
   type Tool,
 } from './game/engine';
+import { audio, moveSound, readMuted, SOUND_STORAGE_KEY } from './game/audio';
 import { levels } from './game/levels';
 import { loadProgress, STORAGE_KEY } from './game/storage';
 
 export default function App() {
   const [progress, setProgress] = useState(() => loadProgress(levels));
+  const [muted, setMuted] = useState(readMuted);
   const [saved, setSaved] = useState(true);
   const [picker, setPicker] = useState(false);
   const [help, setHelp] = useState(false);
@@ -48,6 +52,19 @@ export default function App() {
       setSaved(false);
     }
   }, [progress]);
+  useEffect(() => {
+    audio.muted = muted;
+    try {
+      localStorage.setItem(SOUND_STORAGE_KEY, String(muted));
+    } catch {
+      // Sound still works when browser storage is unavailable.
+    }
+  }, [muted]);
+  function toggleSound() {
+    audio.muted = !muted;
+    setMuted(!muted);
+    if (muted) audio.play('snake');
+  }
   const updateBoard = useCallback((id: string, board: Cell[], solved: boolean) => {
     setProgress((previous) => ({
       ...previous,
@@ -75,6 +92,14 @@ export default function App() {
           </a>
         </GameBreadcrumb>
         <nav className="snake-header-actions" aria-label="Game navigation">
+          <button
+            className="snake-icon-button"
+            aria-label={muted ? 'Turn sound on' : 'Mute sound'}
+            title={muted ? 'Turn sound on' : 'Mute sound'}
+            onClick={toggleSound}
+          >
+            {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
           <button className="snake-help" aria-label="How to play" onClick={() => setHelp(true)}>
             <CircleHelp size={19} />
             <span>How to play</span>
@@ -227,7 +252,8 @@ function Game({
     () => onChange(level.id, board, analysis.solved),
     [level.id, board, analysis.solved, onChange],
   );
-  function edit(next: Cell[]) {
+  function edit(next: Cell[], move: 'mark' | 'restart' = 'mark') {
+    audio.play(moveSound(level, board, next, move));
     dispatch({ type: 'edit', board: next });
     setHint(null);
     setNotice('');
@@ -241,17 +267,23 @@ function Game({
     edit(markCell(level, board, index, alternate ? 'empty' : tool));
   }
   function undo() {
+    const previous = history.past.at(-1);
+    if (previous) audio.play(moveSound(level, board, previous, 'undo'));
     dispatch({ type: 'undo' });
     setHint(null);
     setNotice('');
   }
   function redo() {
+    const next = history.future[0];
+    if (next) audio.play(moveSound(level, board, next, 'redo'));
     dispatch({ type: 'redo' });
     setHint(null);
     setNotice('');
   }
   function giveHint() {
-    setHint(nextHint(level, board));
+    const next = nextHint(level, board);
+    setHint(next);
+    if (next) audio.play('hint');
     setNotice('');
   }
   useEffect(() => {
@@ -468,7 +500,7 @@ function Game({
             <button
               className="snake-primary"
               onClick={() => {
-                edit(initialBoard(level));
+                edit(initialBoard(level), 'restart');
                 setRestart(false);
               }}
             >

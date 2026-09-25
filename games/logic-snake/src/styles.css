@@ -874,6 +874,18 @@
     font-size: 23px;
   }
 }
+@media (max-width: 360px) {
+  .snake-brand {
+    font-size: 18px;
+    gap: 6px;
+  }
+  .snake-header-actions {
+    gap: 2px;
+  }
+  .snake-help {
+    padding: 6px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .snake-app *,
   .snake-app *:before {
