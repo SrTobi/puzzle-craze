@@ -1,694 +1,97 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
-import {
-  ArrowDownLeft,
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  CircleHelp,
-  Hand,
-  Heart,
-  HeartCrack,
-  Lightbulb,
-  Maximize,
-  Minus,
-  MoveUpRight,
-  Plus,
-  RotateCcw,
-  Scan,
-  Sparkles,
-  Undo2,
-  Volume2,
-  VolumeX,
-  X,
-  Download,
-} from 'lucide-react';
-import { Board } from './components/Board';
-import { Modal } from './components/Modal';
-import { audio } from './game/audio';
-import { availableArrows, parseLevel } from './game/engine';
-import firstLight from './levels/first-light.json';
-import { MAX_ZOOM, useCamera } from './hooks/useCamera';
-import { usePuzzle } from './hooks/usePuzzle';
-import { Generator, downloadPuzzle } from './components/Generator';
-import type { GeneratedPuzzle } from './generation/generator';
-import type { Level } from './game/types';
-import { CELL_SIZE } from './game/arrowGeometry';
-import { MAX_LIVES } from './game/playState';
-
-const originalLevel = parseLevel(firstLight);
-const palette = ['#8270df', '#ef816e', '#43a99b', '#e5b247', '#639dd8', '#d87fa6'];
-
-function readMuted() {
-  try {
-    return localStorage.getItem('arrow-surgery:muted') === 'true';
-  } catch {
-    return false;
-  }
-}
+import { ArrowRight, MoveUpRight, Sparkles } from 'lucide-react';
+import { SiteHeader } from '../shared/components/SiteHeader';
+import { links } from '../shared/links';
 
 export default function App() {
-  const [puzzle, setPuzzle] = useState<{
-    level: Level;
-    generated?: GeneratedPuzzle;
-    revision: number;
-  }>({ level: originalLevel, revision: 0 });
   return (
-    <Game
-      key={puzzle.revision}
-      level={puzzle.level}
-      generated={puzzle.generated}
-      onGenerated={(generated) =>
-        setPuzzle((old) => ({ level: generated.level, generated, revision: old.revision + 1 }))
-      }
-      onOriginal={() => setPuzzle((old) => ({ level: originalLevel, revision: old.revision + 1 }))}
-    />
-  );
-}
+    <div className="site-shell">
+      <SiteHeader home />
+      <main>
+        <section className="home-intro" aria-labelledby="home-title">
+          <p className="site-kicker">
+            <Sparkles size={14} /> A little play goes a long way
+          </p>
+          <h1 id="home-title">
+            Small games.
+            <br />
+            <span>Curious minds.</span>
+          </h1>
+          <p>
+            A clear path. A clever turn. A little moment of discovery.
+            <br className="intro-break" /> Pick a puzzle and make some room for play.
+          </p>
+        </section>
 
-function Game({
-  level,
-  generated,
-  onGenerated,
-  onOriginal,
-}: {
-  level: Level;
-  generated?: GeneratedPuzzle;
-  onGenerated: (puzzle: GeneratedPuzzle) => void;
-  onOriginal: () => void;
-}) {
-  const [making, setMaking] = useState(false);
-  const [hint, setHint] = useState<string | null>(null);
-  const [toast, setToast] = useState<{
-    message: string;
-    kind: 'hint' | 'blocked' | 'success';
-  } | null>(null);
-  const [muted, setMuted] = useState(readMuted);
-  const [help, setHelp] = useState(false);
-  const [win, setWin] = useState(false);
-  const [hints, setHints] = useState(0);
-  const [reducedMotion, setReducedMotion] = useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-  const [fullscreen, setFullscreen] = useState(false);
-  const {
-    removed,
-    queued,
-    attempts,
-    flights,
-    collisions: mistakes,
-    lives,
-    lost,
-    resume,
-    canUndo,
-    tap,
-    reset: resetPuzzle,
-    undo: undoPuzzle,
-  } = usePuzzle(level, reducedMotion);
-  const completed = useRef(false);
-  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const clearFeedback = useCallback(() => {
-    clearTimeout(feedbackTimer.current);
-  }, []);
-
-  useEffect(() => clearFeedback, [clearFeedback]);
-  useEffect(() => {
-    audio.muted = muted;
-    try {
-      localStorage.setItem('arrow-surgery:muted', String(muted));
-    } catch {
-      /* Storage is optional. */
-    }
-  }, [muted]);
-  useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const change = () => setReducedMotion(query.matches);
-    const fullscreenChange = () => setFullscreen(Boolean(document.fullscreenElement));
-    query.addEventListener('change', change);
-    document.addEventListener('fullscreenchange', fullscreenChange);
-    return () => {
-      query.removeEventListener('change', change);
-      document.removeEventListener('fullscreenchange', fullscreenChange);
-    };
-  }, []);
-
-  const showFeedback = useCallback((message: string, kind: 'hint' | 'blocked' | 'success') => {
-    clearTimeout(feedbackTimer.current);
-    setToast({ message, kind });
-    feedbackTimer.current = setTimeout(() => {
-      setToast(null);
-      setHint(null);
-    }, 3400);
-  }, []);
-
-  const launch = useCallback(
-    (id: string) => {
-      setHint(null);
-      const result = tap(id);
-      if (result === 'queued') {
-        showFeedback('One life lost. This arrow will fly when its path clears.', 'blocked');
-      } else if (result === 'launched') {
-        setToast(null);
-      }
-    },
-    [tap, showFeedback],
-  );
-
-  const camera = useCamera();
-  const { reset: resetCamera, zoomAt, focusPoint, size } = camera;
-
-  useEffect(() => {
-    if (
-      !lost &&
-      removed.length === level.arrows.length &&
-      flights.length === 0 &&
-      !completed.current
-    ) {
-      completed.current = true;
-      setWin(true);
-      setToast(null);
-      audio.win();
-    }
-  }, [removed.length, flights.length, level, lost]);
-
-  const restart = useCallback(() => {
-    clearFeedback();
-    resetPuzzle();
-    completed.current = false;
-    setHint(null);
-    setToast(null);
-    setWin(false);
-    setHints(0);
-    resetCamera();
-  }, [clearFeedback, resetPuzzle, resetCamera]);
-
-  const undo = useCallback(() => {
-    if (!canUndo) return;
-    undoPuzzle();
-    completed.current = false;
-    setWin(false);
-    setHint(null);
-    showFeedback('One step back. Take your time.', 'success');
-  }, [canUndo, undoPuzzle, showFeedback]);
-
-  const giveHint = useCallback(() => {
-    const available = availableArrows(level.arrows.filter((arrow) => !removed.includes(arrow.id)));
-    if (!available.length) return;
-    setHint(available[0].id);
-    setHints((count) => count + 1);
-    if (level.grid.columns > 40 || level.grid.rows > 40) {
-      const head = available[0].points.at(-1)!;
-      const center: readonly [number, number] = [
-        ((level.grid.columns - 1) * CELL_SIZE) / 2,
-        ((level.grid.rows - 1) * CELL_SIZE) / 2,
-      ];
-      const fit = Math.max(
-        0.0001,
-        Math.min(
-          (size.width - 70) / Math.max(CELL_SIZE, center[0] * 2),
-          (size.height - 62) / Math.max(CELL_SIZE, center[1] * 2),
-          1.18,
-        ),
-      );
-      focusPoint([head[0] * CELL_SIZE, head[1] * CELL_SIZE], center, fit);
-    } else resetCamera();
-    showFeedback('Follow the glow. This arrow has a clear way out.', 'hint');
-    audio.hint();
-  }, [removed, resetCamera, showFeedback, level, size, focusPoint]);
-
-  const toggleFullscreen = useCallback(async () => {
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else if (document.documentElement.requestFullscreen)
-        await document.documentElement.requestFullscreen();
-      else showFeedback('Your browser already has the full game view.', 'success');
-    } catch {
-      showFeedback('Fullscreen is unavailable in this browser window.', 'success');
-    }
-  }, [showFeedback]);
-
-  useEffect(() => {
-    const keydown = (event: KeyboardEvent) => {
-      if (
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey ||
-        help ||
-        win ||
-        lost ||
-        making ||
-        (event.target instanceof HTMLElement &&
-          (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) ||
-            event.target.isContentEditable))
-      )
-        return;
-      const actions: Record<string, () => void> = {
-        h: giveHint,
-        u: undo,
-        r: restart,
-        m: () => setMuted((value) => !value),
-        f: () => void toggleFullscreen(),
-        '0': resetCamera,
-        '+': () => zoomAt(1.2),
-        '=': () => zoomAt(1.2),
-        '-': () => zoomAt(1 / 1.2),
-      };
-      const action = actions[event.key.toLowerCase()];
-      if (action) {
-        event.preventDefault();
-        action();
-      }
-    };
-    window.addEventListener('keydown', keydown);
-    return () => window.removeEventListener('keydown', keydown);
-  }, [giveHint, undo, restart, resetCamera, zoomAt, toggleFullscreen, help, win, lost, making]);
-
-  const freed = removed.length;
-  const total = level.arrows.length;
-  const isComplete = freed === total;
-
-  return (
-    <main className="app">
-      <header className="topbar">
-        <a
-          className="brand"
-          href="/"
-          aria-label="Restart Arrow Surgery"
-          onClick={(event) => {
-            event.preventDefault();
-            restart();
-          }}
-        >
-          <span className="brand-icon">
-            <MoveUpRight size={25} strokeWidth={2.8} />
-            <MoveUpRight size={25} strokeWidth={2.8} />
-          </span>
-          <span>
-            arrow<span className="brand-light">surgery</span>
-            <span className="brand-period">.</span>
-          </span>
-        </a>
-        <span className="brand-tagline">a little untangling for your mind</span>
-        <div className="header-actions">
-          <button
-            className="new-puzzle-button"
-            aria-label="New puzzle"
-            onClick={() => setMaking(true)}
-          >
-            <Sparkles size={17} />
-            <span>New puzzle</span>
-          </button>
-          {generated && (
-            <button
-              className="icon-button"
-              aria-label="Save puzzle JSON"
-              title="Save puzzle and generation details"
-              onClick={() => downloadPuzzle(generated)}
-            >
-              <Download size={17} />
-            </button>
-          )}
-          <button
-            className="icon-button sound-button"
-            aria-label={muted ? 'Turn sound on' : 'Mute sound'}
-            title="Toggle sound (M)"
-            onClick={() => setMuted((value) => !value)}
-          >
-            {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-            <span className={`sound-dot ${muted ? 'muted' : ''}`} />
-          </button>
-          <button
-            className="icon-button"
-            aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            title="Fullscreen (F)"
-            onClick={() => void toggleFullscreen()}
-          >
-            <Maximize size={19} />
-          </button>
-          <span className="header-divider" />
-          <button className="help-button" aria-label="How to play" onClick={() => setHelp(true)}>
-            <CircleHelp size={19} />
-            <span>How to play</span>
-          </button>
-        </div>
-      </header>
-
-      <section className="game" aria-label="Arrow Surgery puzzle">
-        <div className="level-bar">
-          <div className="level-info">
-            <div className="eyebrow">
-              <span className="level-number">{generated ? '✳' : '01'}</span>{' '}
-              {generated ? 'A TANGLE OF YOUR OWN' : 'THE FIRST UNTANGLE'}
-            </div>
-            <h1>
-              {level.name}
-              <span className="title-star">✳</span>
-            </h1>
-            <p>{level.description}</p>
+        <section className="game-collection" id="games" aria-labelledby="games-title">
+          <div className="collection-heading">
+            <h2 id="games-title">Find your next little obsession</h2>
+            <span>THE COLLECTION / 01–02</span>
           </div>
-          <div className="level-mood">
-            <span className="easy-dot" /> {generated ? 'FIND YOUR FLOW' : 'NICE & EASY'}{' '}
-            <span className="mood-divider">/</span> THREE LIVES. TAKE YOUR TIME.
-          </div>
-          <div className="progress-box" aria-label={`${freed} of ${total} arrows freed`}>
-            <div
-              className="progress-ring"
-              style={{ '--progress': `${(freed / total) * 100}%` } as CSSProperties}
-            >
-              {isComplete ? <Check size={21} /> : <ArrowUpRight size={22} />}
-            </div>
-            <div>
-              <div className="progress-count">
-                {String(freed).padStart(2, '0')}
-                <span> / {total}</span>
+          <div className="game-cards">
+            <a className="game-card arrow-card" href={links.arrowSurgery}>
+              <div className="game-art arrow-art" aria-hidden="true">
+                <span className="game-status">Ready to play</span>
+                <svg
+                  viewBox="0 0 440 220"
+                  fill="none"
+                  strokeWidth="13"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M100 164V77H230V42m-17 17 17-17 17 17" stroke="#8a75c7" />
+                  <path d="M151 164h72v-48h108m-17-17 17 17-17 17" stroke="#54a792" />
+                  <path d="M290 55h56v112h-70m17-17-17 17 17 17" stroke="#df9076" />
+                  <path d="M49 83v63m-17-17 17 17 17-17" stroke="#d7ae51" />
+                </svg>
+                <span className="art-caption">LESS TANGLE. MORE FLOW.</span>
               </div>
-              <div className="progress-label">ARROWS FREED</div>
-              <div
-                className="lives"
-                role="status"
-                aria-label={`${lives} of ${MAX_LIVES} lives remaining`}
-              >
-                {Array.from({ length: MAX_LIVES }, (_, i) => (
-                  <Heart
-                    key={i}
-                    size={16}
-                    className={i < lives ? 'life-full' : 'life-empty'}
-                    aria-hidden="true"
-                  />
-                ))}
-                <span>
-                  {lives} {lives === 1 ? 'life' : 'lives'}
+              <div className="card-copy">
+                <p className="site-kicker">01 / Untangle & unwind</p>
+                <h3>
+                  Arrow Surgery <MoveUpRight size={25} />
+                </h3>
+                <p>
+                  Find a clear path and send every colorful arrow on its way. A satisfying little
+                  untangle, one move at a time.
+                </p>
+                <span className="card-action">
+                  Play Arrow Surgery <ArrowRight size={17} />
                 </span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="play-area">
-          <div className="board-watermark" aria-hidden="true">
-            <span>LESS TANGLE</span>
-            <ArrowDownLeft size={16} />
-            <span>MORE FLOW</span>
-          </div>
-          <Board
-            level={level}
-            removed={removed}
-            flights={flights}
-            queued={queued}
-            attempts={attempts}
-            hint={hint}
-            camera={camera}
-            onTap={launch}
-            reducedMotion={reducedMotion}
-          />
-          {isComplete && flights.length === 0 && !win && (
-            <div className="empty-board">
-              <Sparkles size={36} />
-              <h2>A little lighter.</h2>
-              <button className="primary-button" onClick={() => setMaking(true)}>
-                New puzzle <ArrowRight size={18} />
-              </button>
-              <button className="next-chapter" onClick={restart}>
-                Play again
-              </button>
-            </div>
-          )}
-          <div
-            className={`board-message ${toast ? `has-toast ${toast.kind}` : ''}`}
-            role="status"
-            aria-live="polite"
-          >
-            {toast ? (
-              <>
-                {toast.kind === 'hint' ? (
-                  <Lightbulb size={17} />
-                ) : toast.kind === 'blocked' ? (
-                  <X size={17} />
-                ) : (
-                  <Check size={17} />
-                )}
-                <span>{toast.message}</span>
-              </>
-            ) : (
-              <>
-                <span className="tiny-arrow">↗</span>
-                <span>
-                  {queued.length > 0
-                    ? `${queued.length} ${queued.length === 1 ? 'arrow is' : 'arrows are'} waiting in red. Clear a path to set them free.`
-                    : freed === 0
-                      ? 'Find a clear path. Give an arrow a little nudge.'
-                      : isComplete
-                        ? 'All clear. Nicely done.'
-                        : 'A little more room to breathe.'}
+            </a>
+            <a className="game-card snake-card" href={links.logicSnake}>
+              <div className="game-art snake-art" aria-hidden="true">
+                <span className="game-status upcoming">In the making</span>
+                <svg viewBox="0 0 440 220" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M122 168h72v-56h-40V56h105v56h53" stroke="#80a376" strokeWidth="25" />
+                  <circle cx="313" cy="107" r="3" fill="#f9faf2" />
+                  <circle cx="313" cy="117" r="3" fill="#f9faf2" />
+                  <path d="M338 112h10" stroke="#80a376" strokeWidth="3" />
+                  <rect x="254" y="157" width="18" height="18" rx="5" fill="#d9ae59" />
+                </svg>
+                <span className="art-caption">SOMETHING CLEVER IS TAKING SHAPE.</span>
+              </div>
+              <div className="card-copy">
+                <p className="site-kicker">02 / A new direction</p>
+                <h3>
+                  Logic Snake <MoveUpRight size={25} />
+                </h3>
+                <p>
+                  Our next puzzle is taking shape. A new game, a fresh challenge, and plenty of
+                  curious turns to come.
+                </p>
+                <span className="card-action">
+                  Take a peek <ArrowRight size={17} />
+                  <span className="coming-soon">Coming soon</span>
                 </span>
-              </>
-            )}
+              </div>
+            </a>
           </div>
-        </div>
-
-        <footer className="game-footer">
-          <div className="gesture-note">
-            <Hand size={17} />
-            <span>
-              Drag to explore<span className="note-dot">·</span>Scroll to zoom
-            </span>
-          </div>
-          <div className="action-toolbar" aria-label="Game controls">
-            <button
-              className="tool-button"
-              disabled={!canUndo}
-              onClick={undo}
-              title="Undo last click and its automatic arrows (U)"
-            >
-              <Undo2 size={19} />
-              <span>Undo</span>
-            </button>
-            <button className="tool-button" onClick={restart} title="Restart level (R)">
-              <RotateCcw size={18} />
-              <span>Restart</span>
-            </button>
-            <span className="toolbar-divider" />
-            <button
-              className="tool-button hint-button"
-              onClick={giveHint}
-              disabled={isComplete || lost}
-              title="Show a clear arrow (H)"
-            >
-              <Lightbulb size={19} />
-              <span>A little hint</span>
-              <span className="keycap">H</span>
-            </button>
-          </div>
-          <div className="zoom-controls" aria-label="Map controls">
-            <button
-              className="icon-button"
-              aria-label="Zoom out"
-              onClick={() => zoomAt(1 / 1.2)}
-              disabled={camera.camera.zoom <= 0.45}
-            >
-              <Minus size={17} />
-            </button>
-            <span className="zoom-value">{Math.round(camera.camera.zoom * 100)}%</span>
-            <button
-              className="icon-button"
-              aria-label="Zoom in"
-              onClick={() => zoomAt(1.2)}
-              disabled={camera.camera.zoom >= MAX_ZOOM}
-            >
-              <Plus size={17} />
-            </button>
-            <span className="zoom-divider" />
-            <button
-              className="icon-button"
-              aria-label="Center and fit board"
-              title="Center and fit (0)"
-              onClick={resetCamera}
-            >
-              <Scan size={18} />
-            </button>
-          </div>
-        </footer>
-        <div className="bottom-caption">
-          <span className="color-dots">
-            {palette.slice(0, 4).map((color) => (
-              <i key={color} style={{ background: color }} />
-            ))}
-          </span>
-          A clear board. A clearer head.
-          <span className="level-caption">
-            {generated
-              ? `${generated.generation.stats.cells.toLocaleString()} POINTS · FULLY WOVEN`
-              : 'HANDCRAFTED LEVEL 01'}
-          </span>
-        </div>
-      </section>
-
-      {making && (
-        <Generator onClose={() => setMaking(false)} onPlay={onGenerated} onOriginal={onOriginal} />
-      )}
-
-      {help && (
-        <Modal title="A little untangling." onClose={() => setHelp(false)}>
-          <p className="modal-lead">Clear the board, one arrow at a time. There’s no rush.</p>
-          <div className="help-step">
-            <span className="step-icon violet">
-              <MoveUpRight size={26} />
-            </span>
-            <div>
-              <h3>Follow the arrow</h3>
-              <p>
-                Click or tap any part of an arrow. It unwinds and flies away in the direction its
-                head points.
-              </p>
-            </div>
-          </div>
-          <div className="help-step">
-            <span className="step-icon coral">
-              <Undo2 size={26} />
-            </span>
-            <div>
-              <h3>Make a little space</h3>
-              <p>
-                A blocked arrow travels to the obstacle, glows red, and returns. It stays queued in
-                red and flies automatically when you clear its path. Each newly blocked arrow costs
-                one of your three lives. After the third mistake, retry, start a new puzzle, or
-                sneak in three more lives. Before you run out, Undo restores your last move and
-                life.
-              </p>
-            </div>
-          </div>
-          <div className="help-step">
-            <span className="step-icon teal">
-              <Hand size={25} />
-            </span>
-            <div>
-              <h3>Find your perspective</h3>
-              <p>
-                Drag to move the map. Scroll or pinch to zoom. The fit button brings everything back
-                into view.
-              </p>
-            </div>
-          </div>
-          <div className="shortcut-list">
-            <span>
-              <kbd>H</kbd> Hint
-            </span>
-            <span>
-              <kbd>U</kbd> Undo
-            </span>
-            <span>
-              <kbd>R</kbd> Restart
-            </span>
-            <span>
-              <kbd>M</kbd> Sound
-            </span>
-            <span>
-              <kbd>0</kbd> Fit
-            </span>
-          </div>
-          <p className="keyboard-note">Keyboard: Tab to an arrow, then press Enter or Space.</p>
-          <button className="primary-button" onClick={() => setHelp(false)}>
-            Let’s find some flow <ArrowRight size={18} />
-          </button>
-        </Modal>
-      )}
-
-      {lost && !making && attempts.length === 0 && flights.length === 0 && (
-        <Modal
-          title="A knot too many."
-          onClose={() => {}}
-          dismissible={false}
-          className="loss-modal"
-        >
-          <div className="loss-emblem" aria-hidden="true">
-            <HeartCrack size={38} strokeWidth={1.6} />
-          </div>
-          <p className="modal-lead">
-            Three bumps, no hearts left. A fresh start might do the trick.
-          </p>
-          <p className="loss-progress">
-            {freed.toLocaleString()} of {total.toLocaleString()} arrows freed
-          </p>
-          <button className="primary-button" onClick={restart}>
-            Try again <RotateCcw size={17} />
-          </button>
-          <button className="secondary-button" onClick={() => setMaking(true)}>
-            New puzzle <Sparkles size={17} />
-          </button>
-          <button
-            className="continue-button"
-            onClick={() => {
-              resume();
-              setToast(null);
-              setHint(null);
-              clearFeedback();
-            }}
-          >
-            …or quietly continue with 3 more lives
-          </button>
-        </Modal>
-      )}
-
-      {win && (
-        <Modal title="A little lighter." onClose={() => setWin(false)} className="win-modal">
-          {!reducedMotion && (
-            <div className="confetti" aria-hidden="true">
-              {Array.from({ length: 30 }, (_, i) => (
-                <i
-                  key={i}
-                  style={
-                    {
-                      '--i': i,
-                      '--color': palette[i % palette.length],
-                      '--left': `${(i * 37) % 100}%`,
-                      '--delay': `${(i % 7) * -0.23}s`,
-                      '--rotate': `${i * 41}deg`,
-                    } as CSSProperties
-                  }
-                />
-              ))}
-            </div>
-          )}
-          <div className="win-emblem">
-            <Sparkles size={39} strokeWidth={1.6} />
-          </div>
-          <span className="eyebrow">{generated ? 'YOUR TANGLE' : 'LEVEL 01'} · ALL CLEAR</span>
-          <p className="modal-lead">
-            {total.toLocaleString()} arrows, a little patience, and a lovely bit of clarity.
-          </p>
-          <div className="win-stats">
-            <div>
-              <strong>
-                {total.toLocaleString()}
-                <span>/{total.toLocaleString()}</span>
-              </strong>
-              <span>arrows freed</span>
-            </div>
-            <div>
-              <strong>{hints}</strong>
-              <span>{hints === 1 ? 'little hint' : 'little hints'}</span>
-            </div>
-            <div>
-              <strong>{mistakes}</strong>
-              <span>{mistakes === 1 ? 'gentle bump' : 'gentle bumps'}</span>
-            </div>
-          </div>
-          <button
-            className="primary-button"
-            autoFocus
-            onClick={() => {
-              setWin(false);
-              setMaking(true);
-            }}
-          >
-            New puzzle <ArrowRight size={17} />
-          </button>
-          <button className="next-chapter" onClick={restart}>
-            Play again
-          </button>
-        </Modal>
-      )}
-    </main>
+        </section>
+      </main>
+      <footer className="site-footer">
+        A little challenge. A little breathing room. Made for your browser.
+      </footer>
+    </div>
   );
 }

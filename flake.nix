@@ -1,5 +1,5 @@
 {
-  description = "Arrow Surgery — React, TypeScript, and pnpm development environment";
+  description = "Puzzle Craze — React, TypeScript, and pnpm development environment";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -17,7 +17,7 @@
 
             shellHook = ''
               export PATH="$PWD/node_modules/.bin:$PATH"
-              echo "Arrow Surgery · Node $(node --version) · pnpm $(pnpm --version)"
+              echo "Puzzle Craze · Node $(node --version) · pnpm $(pnpm --version)"
               echo "Run pnpm install, then pnpm dev"
             '';
           };

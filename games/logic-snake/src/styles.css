@@ -1,0 +1,53 @@
+.snake-placeholder {
+  text-align: center;
+  padding: 65px 0;
+}
+.snake-placeholder h1 {
+  font:
+    650 clamp(44px, 7vw, 70px) / 1.15 'Manrope',
+    sans-serif;
+  letter-spacing: -3px;
+  margin: 20px 0 30px;
+}
+.snake-placeholder h1 span {
+  color: #80a376;
+}
+.snake-preview {
+  width: min(320px, 100%);
+  border: 1px solid #dce2d3;
+  border-radius: 28px;
+  background-color: #eaf0e3;
+  background-image: radial-gradient(#c8d4bd 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.snake-placeholder h2 {
+  font:
+    600 22px 'Manrope',
+    sans-serif;
+  letter-spacing: -0.5px;
+  margin: 30px 0 14px;
+}
+.snake-placeholder > p:not(.site-kicker) {
+  max-width: 460px;
+  margin: 0 auto 28px;
+  color: #737a6c;
+  line-height: 1.9;
+}
+.snake-back {
+  display: block;
+  width: fit-content;
+  margin: 22px auto 0;
+  color: #66715e;
+  font-size: 12px;
+}
+.snake-back:hover {
+  text-decoration: underline;
+}
+@media (max-width: 600px) {
+  .snake-placeholder {
+    padding: 40px 0;
+  }
+  .snake-placeholder h1 {
+    letter-spacing: -2px;
+  }
+}

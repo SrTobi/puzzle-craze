@@ -9,6 +9,7 @@ import { attemptDistance, impactGlow } from '../game/motion';
 import type { BlockedAttempt, Flight } from '../game/motion';
 import { PuzzleIndex } from '../game/puzzleIndex';
 import { CanvasBoard } from './CanvasBoard';
+import { boardFit } from '../game/cameraBounds';
 
 const PALETTE = { ...COLORS, queued: { main: '#e52243', light: '#ff5141', name: 'Queued' } };
 const SPARKS = [
@@ -152,14 +153,7 @@ function SvgBoard({
   const [now, setNow] = useState(0);
   const [aimed, setAimed] = useState<string | null>(null);
   const { size, camera: view } = camera;
-  const fit = Math.max(
-    0.0001,
-    Math.min(
-      (size.width - 70) / Math.max(CELL, (level.grid.columns - 1) * CELL),
-      (size.height - 62) / Math.max(CELL, (level.grid.rows - 1) * CELL),
-      1.18,
-    ),
-  );
+  const fit = boardFit(level.grid, size);
   const scale = fit * view.zoom;
   const offsetX = ((level.grid.columns - 1) * CELL) / 2;
   const offsetY = ((level.grid.rows - 1) * CELL) / 2;
@@ -213,8 +207,14 @@ function SvgBoard({
         }}
       >
         <defs>
-          <pattern id="grid-pattern" width={CELL} height={CELL} patternUnits="userSpaceOnUse">
-            <circle r="1.7" className="grid-dots" />
+          <pattern
+            id="grid-pattern"
+            width={CELL}
+            height={CELL}
+            patternUnits="userSpaceOnUse"
+            patternTransform={`translate(${-CELL / 2} ${-CELL / 2})`}
+          >
+            <circle cx={CELL / 2} cy={CELL / 2} r="2.625" className="grid-dots" />
           </pattern>
           {Object.entries(PALETTE).map(([key, color]) => (
             <linearGradient
@@ -235,10 +235,10 @@ function SvgBoard({
           transform={`translate(${size.width / 2 + view.x} ${size.height / 2 + view.y}) scale(${scale}) translate(${-offsetX} ${-offsetY})`}
         >
           <rect
-            x={-CELL}
-            y={-CELL}
-            width={(level.grid.columns + 1) * CELL}
-            height={(level.grid.rows + 1) * CELL}
+            x={-CELL / 2}
+            y={-CELL / 2}
+            width={level.grid.columns * CELL}
+            height={level.grid.rows * CELL}
             fill="url(#grid-pattern)"
             aria-hidden="true"
           />

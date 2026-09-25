@@ -1,6 +1,12 @@
-# Arrow Surgery
+# Puzzle Craze
 
-A fullscreen, colorful arrow-unblocking puzzle built with React, TypeScript, Vite, and pnpm. Includes a handcrafted introduction, a seeded generator for full boards and image silhouettes, synthesized sounds, smooth unwinding arrows, and a movable, zoomable board. Everything runs locally in the browser.
+A collection of browser games built with React, TypeScript, and Vite. The landing page introduces each game; each game has its own page and source directory.
+
+| Page                      | URL                     | Source                 |
+| ------------------------- | ----------------------- | ---------------------- |
+| Title page                | `/`                     | `index.html`, `src/`   |
+| Arrow Surgery             | `/games/arrow-surgery/` | `games/arrow-surgery/` |
+| Logic Snake (coming soon) | `/games/logic-snake/`   | `games/logic-snake/`   |
 
 ## Development
 
@@ -10,95 +16,62 @@ pnpm install
 pnpm dev
 ```
 
-Open the local address printed by Vite (normally http://127.0.0.1:5173). The pinned flake provides Node 24, pnpm 11, and the TypeScript language server on Linux and macOS. If you use direnv, run `direnv allow` once to activate `.envrc`. Without Nix, install Node 24+ and pnpm 11.
+Open the address printed by Vite (normally http://127.0.0.1:5173). All commands run from the repository root. The pinned flake provides Node 24, pnpm 11, and the TypeScript language server. With direnv, run `direnv allow` once; without Nix, install Node 24+ and pnpm 11.
 
 ```sh
-pnpm test     # Rules, generation, masks, picking, and a million-point generation check
-pnpm build    # Strict TypeScript check + production bundle in dist/
-pnpm preview # Serve the production bundle locally
+pnpm test          # Tests across all games
+pnpm build         # TypeScript checks and all three pages in dist/
+pnpm preview       # Serve the production site locally
+pnpm format:check  # Check formatting
 ```
 
-Only esbuild's install script is enabled in `pnpm-workspace.yaml`. Sound is generated locally through Web Audio after a player interaction. Muting is remembered in local storage. Fonts are bundled locally with system fallbacks; the game makes no third-party requests.
+## Organization
 
-## Playing
-
-- Click or tap an arrow directly, or up to 1½ grid spaces away. Between neighboring arrows with the same blocked/free status, the closer arrow wins (exact ties are resolved consistently). When one is blocked, the removable arrow is preferred until the click is within 20% of a one-cell gap from the blocked arrow, or within ¾ of a grid space when there is an empty grid point between them. These boundaries are measured from the arrows' grid lines. Distant ambiguous clicks do nothing. Direct hits target the arrow you touch, including blocked arrows. The reach follows the grid as you zoom, and hovering previews the selection. An arrow follows its path and exits in the direction its head points, provided no other arrow occupies that outgoing ray.
-- **New puzzle** creates a fully filled rectangle, heart, cat, butterfly, or an uploaded color or black-and-white image. Set dimensions and a seed, then weave and play. Images are resized without changing their aspect ratio; Color is converted to grayscale. An automatic histogram cutoff separates the main shades and favors a low-density gap; a histogram, manual threshold slider, and inversion let you refine which points to fill. Automatic mode recalculates when the grid size changes; a manual cutoff stays put until you choose auto again. Transparent pixels stay empty. Generation runs in a cancellable worker. The preview reports and colors any small mask repairs before play. Save puzzle exports the level, masks, repairs, seed, settings, and solution as JSON.
-- A blocked arrow unwinds toward the nearest blocker, glows red on contact, and retraces its path. It stays red and queued, then automatically launches as soon as its path opens. Multiple queued arrows can release in a chain. Clearing a blocker during the attempt continues the flight smoothly from its current position. You start with three lives; each newly blocked selection costs one. Repeated taps on an already queued arrow cost nothing. The third mistake ends the game after the impact animation, with retry, new-puzzle, and a discreet continue option that restores three lives while keeping your board and queue. There is no time limit.
-- Drag to pan; scroll or pinch to zoom. Zoom stays anchored under your pointer. Use the fit button to recenter.
-- Undo reverses the last click, including its entire automatic chain, or cancels a queued selection. Before you run out of lives, it restores the previous queue alongside its blockers and refunds that move’s life; the latest 128 steps are retained to bound history memory on large boards. Continuing after a loss starts a fresh undo history while preserving the total mistake count. Restart clears the queue and all motion, and restores the level and view. A hint highlights an available arrow and brings it into view.
-- Keyboard: `Tab` to an arrow and `Enter`/`Space` to launch. `H` hint, `U` undo, `R` restart, `M` sound, `F` fullscreen, `0` fit, `+`/`-` zoom. Help, the puzzle maker, and completion dialogs support Escape; the loss dialog requires an explicit choice.
-- Large boards use Canvas. Tab to the board, use the arrow keys to select and center an arrow, and press Enter or Space to launch. SVG remains in use for smaller puzzles. Overview rendering simplifies tiny arrows; zooming restores their heads and details.
-- The board viewport reaches all four screen edges, with controls floating above it. The layout adapts to touch screens and honors reduced-motion preferences. Winning highlights New puzzle above the secondary Play again action.
-
-## Level format (version 1)
-
-The starting map is `src/levels/first-light.json`. Types are in `src/game/types.ts`; `parseLevel()` validates imported JSON before use.
-
-```json
-{
-  "version": 1,
-  "id": "example",
-  "name": "A clear path",
-  "description": "One small beginning.",
-  "difficulty": "easy",
-  "grid": { "columns": 5, "rows": 4 },
-  "arrows": [
-    {
-      "id": "one",
-      "color": "teal",
-      "points": [
-        [0, 2],
-        [0, 0],
-        [2, 0]
-      ]
-    },
-    {
-      "id": "two",
-      "color": "coral",
-      "points": [
-        [3, 0],
-        [3, 2],
-        [4, 2]
-      ]
-    }
-  ]
-}
+```text
+index.html                 Landing page entry and metadata
+src/                       Landing page UI and styles
+games/
+  arrow-surgery/           Existing game, tests, levels, worker, and design docs
+  logic-snake/             Second game's page and development placeholder
+shared/
+  components/             Reusable site UI
+  styles/                 Fonts, base styles, and site layout
+  links.ts                Navigation paths using Vite's base URL
+  mountApp.tsx            Common React bootstrap
+public/                    Site-wide static assets
 ```
 
-Coordinates are integer `[x,y]` pairs with `(0,0)` at the top left; x increases rightward and y downward. Points run **from tail to head**. Each pair of consecutive points describes a nonzero horizontal or vertical segment. Corners are sufficient: intermediate cells along straight segments are inferred. The last segment determines the launch direction.
+The root package, lockfile, TypeScript, Vite, formatting, and Nix configuration are shared infrastructure. Keep game-specific logic, styles, assets, and tests inside its game folder. Put code in `shared/` when it is useful across pages; shared code should not import a game's internals. Game styles load only on that game's page. Fonts are bundled locally.
 
-IDs must be unique. Paths must remain in bounds and may neither overlap another path nor visit a cell twice. Colors: `violet`, `coral`, `teal`, `gold`, `blue`, `pink`. Difficulty: `easy`, `medium`, `hard`. Grid dimensions: 1–1,024 points per axis. An arrow needs at least two adjacent points, so a 1×1 board cannot be generated.
+See [Arrow Surgery's guide](games/arrow-surgery/README.md) for gameplay, level formats, and generation details, and [Logic Snake's notes](games/logic-snake/README.md) for its starting point.
 
-The outgoing head ray is checked against every occupied cell of every other active arrow, including segment interiors. Tails follow their existing paths as heads extend, so a clear head ray suffices for escape. Removed arrows cease blocking immediately, allowing quick successive moves. The animation preserves total path length.
+## Building and hosting
 
-`solve()` returns a valid removal order or `null` for a deadlock. Removal can only open routes, so the greedy solver is complete for these rules. Validation rejects unsolvable levels. Linked row/column occupancy indexes accelerate ray checks, solving, and automatic chains; nearby-cell queries preserve the forgiving picking rules without scanning the entire board.
+Vite builds separate HTML entry points, so each page can be opened or refreshed directly without a client-side router. Publish the whole `dist/` directory to a static host that serves directory `index.html` files:
 
-## Level generation
-
-`src/generation/generator.ts` exports `generatePuzzle(input, onProgress?)`. Omit `mask` for a full rectangle, or provide a row-major array of 0/1 values of length `columns * rows`. Every enabled point is covered exactly once. The returned object contains `{ level, generation }`; masks in its metadata are stored as rows of `"0"`/`"1"` characters. The ordinary version-1 level is `result.level`.
-
-```ts
-const result = generatePuzzle({
-  columns: 64,
-  rows: 64,
-  seed: 'my-cat',
-  mask, // optional Uint8Array; 1 = occupied, 0 = empty
-  length: 10, // desired average arrow length in points
-  repair: true, // false requires an exact, unchanged mask
-});
+```text
+dist/index.html
+dist/games/arrow-surgery/index.html
+dist/games/logic-snake/index.html
+dist/assets/               Shared and page-specific bundles
 ```
 
-Generation carves escapable arrows out of the full mask, recording a legal removal order. Every result is independently checked for geometry, exact coverage, and solvability. Rectangles have a guaranteed serpentine-band fallback. Irregular masks have bounded attempts and small optional repairs; an unsuccessful search returns an error instead of an incomplete puzzle. See [generation design and limits](docs/level-generation.md) for details and measured scale checks.
+For hosting beneath a URL prefix, build with `pnpm build --base=/your-prefix/`. Shared navigation follows that base path.
 
-## Structure
+### GitHub Pages
 
-- `src/game/` — pure geometry/rules, validation, tests, and Web Audio sounds
-- `src/levels/` — authored JSON maps
-- `src/generation/` — mask conversion, deterministic generation, worker, and scale tests
-- `src/hooks/useCamera.ts` — mouse/touch panning, cursor zoom, pinch zoom
-- `src/components/Board.tsx`, `CanvasBoard.tsx` — SVG and Canvas arrows, picking, and animation
-- `src/components/Generator.tsx` — shape/image controls, progress, repair preview, and export
-- `src/App.tsx` — game state, feedback, controls, help, completion
+[The deployment workflow](.github/workflows/deploy-pages.yml) runs on every push to `master` and can also be run manually from Actions. Both triggers check out the current tip of `master`, install the locked dependencies, check formatting, run tests, build all pages, and deploy `dist/`. New runs supersede older pending deployments.
 
-Inspired by the arrow escape mechanic at https://arrowout.github.io/. All game code and visuals here are original.
+In the repository's **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. Ensure that the `master` branch exists and contains these changes; the checkout used during this refactor was named `main`. If the `github-pages` environment restricts deployment branches, allow `master` there as well.
+
+The workflow obtains the site's base path from GitHub Pages, so repository sites (such as `https://srtobi.github.io/puzzle-craze/`) and custom domains use the correct navigation, scripts, styles, fonts, and worker URLs. No SPA fallback or rewrite is required. This follows [Vite's GitHub Pages deployment guidance](https://vite.dev/guide/static-deploy.html#github-pages).
+
+To check the repository Pages layout locally:
+
+```sh
+pnpm build --base=/puzzle-craze/
+pnpm preview --base=/puzzle-craze/
+# Open http://127.0.0.1:4173/puzzle-craze/
+```
+
+To add another game, create `games/<name>/index.html` and its source directory, register the HTML entry in `vite.config.ts`, add its path to `shared/links.ts`, and link it from the landing page. The root TypeScript configuration and test runner already include `games/` and `shared/`.

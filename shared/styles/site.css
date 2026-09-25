@@ -1,0 +1,92 @@
+.site-shell {
+  max-width: 1180px;
+  padding: 0 40px;
+  margin: 0 auto;
+}
+.site-header {
+  min-height: 100px;
+  border-bottom: 1px solid #dedfd6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  font:
+    800 24px 'Manrope',
+    sans-serif;
+  letter-spacing: -1px;
+}
+.site-brand > span:last-child {
+  font-weight: 500;
+}
+.site-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+  border-radius: 13px;
+  background: #e9e4f5;
+  color: #7761b8;
+}
+.site-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #66715e;
+  font-size: 12px;
+  padding: 12px 0;
+}
+.site-nav:hover {
+  color: #7761b8;
+}
+.site-kicker {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #66715e;
+}
+.site-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 15px 21px;
+  background: #657b58;
+  color: #fffdf4;
+  font-weight: 500;
+}
+.site-button:hover {
+  background: #536948;
+}
+.site-footer {
+  padding: 30px 0;
+  border-top: 1px solid #dedfd6;
+  color: #747b6d;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .site-shell {
+    padding: 0 22px;
+  }
+  .site-header {
+    min-height: 82px;
+    gap: 12px;
+  }
+  .site-brand {
+    font-size: 20px;
+  }
+  .site-mark {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+  }
+  .site-nav {
+    font-size: 11px;
+  }
+}

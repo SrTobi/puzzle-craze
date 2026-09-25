@@ -6,6 +6,7 @@ import { PuzzleIndex } from '../game/puzzleIndex';
 import { pickArrow } from '../game/hitTesting';
 import { attemptDistance, impactGlow } from '../game/motion';
 import type { Arrow, Point } from '../game/types';
+import { boardFit } from '../game/cameraBounds';
 
 export function CanvasBoard({
   level,
@@ -24,14 +25,7 @@ export function CanvasBoard({
   const [keyboard, setKeyboard] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const { size, camera: view } = camera;
-  const fit = Math.max(
-    0.0001,
-    Math.min(
-      (size.width - 70) / Math.max(CELL, (level.grid.columns - 1) * CELL),
-      (size.height - 62) / Math.max(CELL, (level.grid.rows - 1) * CELL),
-      1.18,
-    ),
-  );
+  const fit = boardFit(level.grid, size);
   const scale = fit * view.zoom;
   const offsetX = ((level.grid.columns - 1) * CELL) / 2,
     offsetY = ((level.grid.rows - 1) * CELL) / 2;
@@ -117,8 +111,8 @@ export function CanvasBoard({
       ctx.beginPath();
       for (let y = top; y <= bottom; y++)
         for (let x = left; x <= right; x++) {
-          ctx.moveTo(x * CELL + 1.7, y * CELL);
-          ctx.arc(x * CELL, y * CELL, 1.7, 0, Math.PI * 2);
+          ctx.moveTo(x * CELL + 2.625, y * CELL);
+          ctx.arc(x * CELL, y * CELL, 2.625, 0, Math.PI * 2);
         }
       ctx.fill();
     }

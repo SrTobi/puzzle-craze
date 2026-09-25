@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { Point } from '../game/types';
-
-interface Camera {
-  x: number;
-  y: number;
-  zoom: number;
-}
+import type { Level, Point } from '../game/types';
+import { cameraReturnTarget } from '../game/cameraBounds';
+import type { Camera } from '../game/cameraBounds';
 interface Pointer {
   x: number;
   y: number;
@@ -14,7 +10,7 @@ interface Pointer {
 export const MAX_ZOOM = 256;
 const clampZoom = (zoom: number) => Math.max(0.45, Math.min(MAX_ZOOM, zoom));
 
-export function useCamera() {
+export function useCamera(grid: Level['grid'], reducedMotion: boolean) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 800, height: 600 });
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
@@ -22,15 +18,70 @@ export function useCamera() {
   const pointers = useRef(new Map<number, Pointer>());
   const gesture = useRef({ dragged: false, x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  const returnFrame = useRef<number | undefined>(undefined);
+  const returnTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const update = useCallback((next: Camera) => {
     current.current = next;
     setCamera(next);
   }, []);
 
-  const reset = useCallback(() => update({ x: 0, y: 0, zoom: 1 }), [update]);
+  const cancelReturn = useCallback(() => {
+    if (returnFrame.current !== undefined) cancelAnimationFrame(returnFrame.current);
+    clearTimeout(returnTimer.current);
+    returnFrame.current = undefined;
+    returnTimer.current = undefined;
+  }, []);
+
+  const returnToView = useCallback(() => {
+    cancelReturn();
+    if (pointers.current.size > 0) return;
+    const start = current.current;
+    const target = cameraReturnTarget(start, grid, size);
+    if (target === start) return;
+    if (reducedMotion) {
+      update(target);
+      return;
+    }
+    const started = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - started) / 480);
+      if (progress === 1) {
+        returnFrame.current = undefined;
+        update(target);
+        return;
+      }
+      // Ease out with a small overshoot for a soft spring back into the viewport.
+      const t = progress - 1;
+      const eased = 1 + 2.70158 * t ** 3 + 1.70158 * t ** 2;
+      update({
+        ...start,
+        x: start.x + (target.x - start.x) * eased,
+        y: start.y + (target.y - start.y) * eased,
+      });
+      returnFrame.current = requestAnimationFrame(tick);
+    };
+    returnFrame.current = requestAnimationFrame(tick);
+  }, [cancelReturn, grid, size, reducedMotion, update]);
+
+  const scheduleReturn = useCallback(() => {
+    cancelReturn();
+    returnTimer.current = setTimeout(returnToView, 150);
+  }, [cancelReturn, returnToView]);
+
+  // Recheck after a resize, and clean up scheduled work on unmount.
+  useEffect(() => {
+    scheduleReturn();
+    return cancelReturn;
+  }, [scheduleReturn, cancelReturn]);
+
+  const reset = useCallback(() => {
+    cancelReturn();
+    update({ x: 0, y: 0, zoom: 1 });
+  }, [cancelReturn, update]);
   const focusPoint = useCallback(
     (point: Point, center: Point, fit: number) => {
+      cancelReturn();
       const zoom = clampZoom(Math.max(current.current.zoom, 0.8 / fit));
       update({
         zoom,
@@ -38,17 +89,19 @@ export function useCamera() {
         y: (center[1] - point[1]) * fit * zoom,
       });
     },
-    [update],
+    [cancelReturn, update],
   );
 
   const zoomAt = useCallback(
     (factor: number, x = 0, y = 0) => {
+      cancelReturn();
       const old = current.current;
       const zoom = clampZoom(old.zoom * factor);
       const ratio = zoom / old.zoom;
       update({ zoom, x: x - (x - old.x) * ratio, y: y - (y - old.y) * ratio });
+      scheduleReturn();
     },
-    [update],
+    [cancelReturn, scheduleReturn, update],
   );
 
   useEffect(() => {
@@ -58,6 +111,12 @@ export function useCamera() {
       setSize({ width: entry.contentRect.width, height: entry.contentRect.height });
     });
     observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
       const rect = element.getBoundingClientRect();
@@ -70,14 +129,12 @@ export function useCamera() {
       );
     };
     element.addEventListener('wheel', wheel, { passive: false });
-    return () => {
-      observer.disconnect();
-      element.removeEventListener('wheel', wheel);
-    };
+    return () => element.removeEventListener('wheel', wheel);
   }, [zoomAt]);
 
   const onPointerDown = (event: ReactPointerEvent<Element>) => {
     if (event.button !== 0) return;
+    cancelReturn();
     event.currentTarget.setPointerCapture(event.pointerId);
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pointers.current.size === 1) {
@@ -129,7 +186,10 @@ export function useCamera() {
     pointers.current.delete(event.pointerId);
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
-    if (pointers.current.size === 0) setDragging(false);
+    if (pointers.current.size === 0) {
+      setDragging(false);
+      returnToView();
+    }
     if (tap) return [event.clientX, event.clientY];
   };
 
