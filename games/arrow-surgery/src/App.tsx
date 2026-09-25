@@ -454,15 +454,6 @@ function Game({
             </span>
           </div>
           <div className="action-toolbar" aria-label="Game controls">
-            <button
-              className="tool-button"
-              disabled={!canUndo}
-              onClick={undo}
-              title="Undo last click and its automatic arrows (U)"
-            >
-              <Undo2 size={19} />
-              <span>Undo</span>
-            </button>
             <button className="tool-button" onClick={restart} title="Restart level (R)">
               <RotateCcw size={18} />
               <span>Restart</span>
