@@ -34,7 +34,7 @@ import type { GeneratedPuzzle } from './generation/generator';
 import type { Level } from './game/types';
 import { CELL_SIZE } from './game/arrowGeometry';
 import { MAX_LIVES } from './game/playState';
-import { HomeButton } from '../../../shared/components/HomeButton';
+import { GameBreadcrumb } from '../../../shared/components/GameBreadcrumb';
 import { links } from '../../../shared/links';
 import { boardFit } from './game/cameraBounds';
 
@@ -266,26 +266,27 @@ function Game({
   return (
     <main className="app">
       <header className="topbar">
-        <a
-          className="brand"
-          href={links.arrowSurgery}
-          aria-label="Restart Arrow Surgery"
-          onClick={(event) => {
-            event.preventDefault();
-            restart();
-          }}
-        >
-          <span className="brand-icon">
-            <MoveUpRight size={25} strokeWidth={2.8} />
-            <MoveUpRight size={25} strokeWidth={2.8} />
-          </span>
-          <span>
-            arrow<span className="brand-light">surgery</span>
-            <span className="brand-period">.</span>
-          </span>
-        </a>
+        <GameBreadcrumb>
+          <a
+            className="brand"
+            href={links.arrowSurgery}
+            aria-label="Restart Arrow Surgery"
+            onClick={(event) => {
+              event.preventDefault();
+              restart();
+            }}
+          >
+            <span className="brand-icon">
+              <MoveUpRight size={25} strokeWidth={2.8} />
+              <MoveUpRight size={25} strokeWidth={2.8} />
+            </span>
+            <span>
+              arrow<span className="brand-light">surgery</span>
+              <span className="brand-period">.</span>
+            </span>
+          </a>
+        </GameBreadcrumb>
         <div className="header-actions">
-          <HomeButton className="icon-button" />
           <button
             className="new-puzzle-button"
             aria-label="New puzzle"

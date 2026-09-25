@@ -1,4 +1,5 @@
-import { ArrowLeft, Puzzle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { SiteMark } from './SiteMark';
 import { links } from '../links';
 import '../styles/site.css';
 
@@ -6,9 +7,7 @@ export function SiteHeader({ home = false }: { home?: boolean }) {
   return (
     <header className="site-header">
       <a className="site-brand" href={links.home} aria-label="Puzzle Craze home">
-        <span className="site-mark">
-          <Puzzle size={23} />
-        </span>
+        <SiteMark />
         puzzle<span>craze.</span>
       </a>
       {home ? (

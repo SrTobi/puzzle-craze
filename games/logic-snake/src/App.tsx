@@ -16,7 +16,7 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
-import { HomeButton } from '../../../shared/components/HomeButton';
+import { GameBreadcrumb } from '../../../shared/components/GameBreadcrumb';
 import { links } from '../../../shared/links';
 import { Board } from './components/Board';
 import { Dialog } from './components/Dialog';
@@ -65,16 +65,16 @@ export default function App() {
   return (
     <div className="snake-app">
       <header className="snake-topbar">
-        <a className="snake-brand" href={links.logicSnake} aria-label="Logic Snake home">
-          <Route size={31} strokeWidth={2.3} />
-          <span>
-            Logic <span className="brand-light">Snake</span>
-            <span className="brand-period">.</span>
-          </span>
-        </a>
+        <GameBreadcrumb>
+          <a className="snake-brand" href={links.logicSnake} aria-label="Logic Snake home">
+            <Route size={31} strokeWidth={2.3} />
+            <span>
+              Logic <span className="brand-light">Snake</span>
+              <span className="brand-period">.</span>
+            </span>
+          </a>
+        </GameBreadcrumb>
         <nav className="snake-header-actions" aria-label="Game navigation">
-          <HomeButton />
-          <span className="snake-divider" />
           <button className="snake-help" aria-label="How to play" onClick={() => setHelp(true)}>
             <CircleHelp size={19} />
             <span>How to play</span>
