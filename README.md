@@ -62,9 +62,9 @@ For hosting beneath a URL prefix, build with `pnpm build --base=/your-prefix/`. 
 
 ### GitHub Pages
 
-[The deployment workflow](.github/workflows/deploy-pages.yml) runs on every push to `master` and can also be run manually from Actions. Both triggers check out the current tip of `master`, install the locked dependencies, check formatting, run tests, build all pages, and deploy `dist/`. New runs supersede older pending deployments.
+[The deployment workflow](.github/workflows/deploy-pages.yml) runs on every push to `main` and can also be run manually from Actions. Both triggers check out the current tip of `main`, install the locked dependencies, check formatting, run tests, build all pages, and deploy `dist/`. New runs supersede older pending deployments.
 
-In the repository's **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. Ensure that the `master` branch exists and contains these changes; the checkout used during this refactor was named `main`. If the `github-pages` environment restricts deployment branches, allow `master` there as well.
+In the repository's **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. If the `github-pages` environment restricts deployment branches, allow `main` there as well.
 
 The workflow obtains the site's base path from GitHub Pages, so repository sites (such as `https://srtobi.github.io/puzzle-craze/`) and custom domains use the correct navigation, scripts, styles, fonts, and worker URLs. No SPA fallback or rewrite is required. This follows [Vite's GitHub Pages deployment guidance](https://vite.dev/guide/static-deploy.html#github-pages).
 
