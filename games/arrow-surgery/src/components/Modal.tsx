@@ -1,6 +1,17 @@
 import { useEffect, useId, useRef } from 'react';
-import type { ReactNode } from 'react';
+import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { X } from 'lucide-react';
+
+function isBackdrop(event: MouseEvent<HTMLDialogElement> | PointerEvent<HTMLDialogElement>) {
+  if (event.target !== event.currentTarget) return false;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  return (
+    event.clientX < bounds.left ||
+    event.clientX > bounds.right ||
+    event.clientY < bounds.top ||
+    event.clientY > bounds.bottom
+  );
+}
 
 export function Modal({
   title,
@@ -16,6 +27,7 @@ export function Modal({
   dismissible?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const backdropPress = useRef(false);
   const titleId = useId();
   useEffect(() => {
     const dialog = ref.current!;
@@ -31,8 +43,18 @@ export function Modal({
         event.preventDefault();
         if (dismissible) onClose();
       }}
+      onPointerDown={(event) => {
+        backdropPress.current = event.button === 0 && event.isPrimary && isBackdrop(event);
+      }}
+      onPointerCancel={() => {
+        backdropPress.current = false;
+      }}
       onClick={(event) => {
-        if (dismissible && event.target === event.currentTarget) onClose();
+        // Native pickers can return a click targeted at the dialog. Only dismiss
+        // an intentional backdrop press, never a click returning from a control.
+        const startedOnBackdrop = backdropPress.current;
+        backdropPress.current = false;
+        if (dismissible && startedOnBackdrop && event.detail > 0 && isBackdrop(event)) onClose();
       }}
     >
       <div className="modal-inner">
