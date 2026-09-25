@@ -32,16 +32,7 @@
 .snake-brand .brand-period {
   color: #8270df;
 }
-.snake-tagline {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #909587;
-  font-size: 12px;
-  letter-spacing: 0.3px;
-}
 .snake-header-actions,
-.snake-home,
 .snake-help {
   display: flex;
   align-items: center;
@@ -52,11 +43,9 @@
 .snake-header-actions {
   gap: 18px;
 }
-.snake-home,
 .snake-help {
   min-height: 44px;
 }
-.snake-home:hover,
 .snake-help:hover {
   color: #8270bf;
 }
@@ -106,17 +95,6 @@
     sans-serif;
   letter-spacing: -1.5px;
   margin: 12px 0 8px;
-}
-.snake-levelbar h1 > span {
-  font-size: 26px;
-  margin-left: 13px;
-  color: #b1bd9f;
-  font-weight: 400;
-}
-.snake-levelbar p {
-  font-size: 12px;
-  color: #858d7c;
-  margin: 0;
 }
 .snake-progress {
   display: flex;
@@ -172,14 +150,6 @@
   width: 100%;
   max-width: 658px;
   justify-self: center;
-}
-.snake-board-caption {
-  display: flex;
-  justify-content: space-between;
-  margin: 0 3px 15px;
-  font-size: 8px;
-  letter-spacing: 1.4px;
-  color: #939b87;
 }
 .snake-board {
   display: grid;
@@ -346,27 +316,19 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.snake-aside {
-  padding-top: 29px;
-}
 .snake-regions-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #a2af8f;
-}
-.snake-eyebrow {
-  color: #879378;
-  font-size: 8px;
-  letter-spacing: 1.4px;
-  font-weight: 600;
+  color: #78836e;
+  margin-bottom: 8px;
 }
 .snake-aside h2 {
   font:
-    600 27px 'Manrope',
+    600 24px 'Manrope',
     sans-serif;
   letter-spacing: -1px;
-  margin: 13px 0 8px;
+  margin: 0;
 }
 .snake-aside > p {
   color: #8a9280;
@@ -457,21 +419,6 @@
   background: #99b183;
   transition: width 0.3s;
 }
-.snake-aside-note {
-  border-top: 1px solid #e1e4d7;
-  margin-top: 26px;
-  padding-top: 22px;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  color: #a3af94;
-}
-.snake-aside-note p {
-  font-size: 11px;
-  line-height: 1.8;
-  margin: 0;
-  color: #8a937e;
-}
 .snake-legend {
   display: flex;
   gap: 18px;
@@ -502,13 +449,6 @@
   justify-content: space-between;
   gap: 12px;
   padding: 15px 0 23px;
-}
-.snake-controls > p {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #969e8a;
-  font-size: 10px;
 }
 .snake-action-toolbar {
   display: flex;
@@ -551,42 +491,6 @@
   color: #a2aa96;
   font-size: 10px;
 }
-.snake-bottom {
-  margin: 0 42px;
-  padding: 18px 12px;
-  border-top: 1px solid #e1e3d9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  color: #a2aa97;
-  font-size: 9px;
-}
-.snake-bottom > span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.snake-bottom > span:last-child {
-  font-size: 7px;
-  letter-spacing: 1.3px;
-}
-.snake-bottom i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #9f91bc;
-}
-.snake-bottom i:nth-child(2) {
-  background: #7eafa0;
-}
-.snake-bottom i:nth-child(3) {
-  background: #d6a08a;
-}
-.snake-bottom i:nth-child(4) {
-  background: #d6ba78;
-  margin-right: 6px;
-}
 .snake-win {
   display: flex;
   align-items: center;
@@ -600,15 +504,11 @@
   margin: 0 0 20px;
 }
 .snake-win h2 {
-  margin: 0 0 5px;
+  margin: 0;
   font:
     650 20px 'Manrope',
     sans-serif;
   color: #4d6543;
-}
-.snake-win p {
-  margin: 0;
-  font-size: 12px;
 }
 .snake-primary {
   display: inline-flex;
@@ -786,18 +686,12 @@
   }
 }
 @media (max-width: 1050px) {
-  .snake-tagline {
-    display: none;
-  }
   .snake-game {
     padding: 28px 32px 0;
   }
   .snake-workspace {
     gap: 40px;
     grid-template-columns: minmax(0, 658px) 220px;
-  }
-  .snake-controls > p {
-    display: none;
   }
   .snake-controls {
     justify-content: center;
@@ -869,9 +763,6 @@
     justify-content: center;
     gap: 10px;
   }
-  .snake-aside h2,
-  .snake-aside > p,
-  .snake-aside-note,
   .snake-legend,
   .region-mini,
   .region-state,
@@ -904,14 +795,6 @@
     gap: 7px;
     padding: 10px 0 15px;
   }
-  .snake-bottom {
-    margin: 0 22px;
-    padding: 16px 0;
-  }
-  .snake-bottom > span:last-child {
-    font-size: 6px;
-    letter-spacing: 0.5px;
-  }
   .snake-win {
     flex-wrap: wrap;
   }
@@ -936,13 +819,6 @@
   .snake-levelbar h1 {
     font-size: 25px;
   }
-  .snake-levelbar h1 > span {
-    margin-left: 7px;
-    font-size: 21px;
-  }
-  .snake-levelbar p {
-    font-size: 10px;
-  }
   .snake-progress {
     flex-direction: column;
     gap: 3px;
@@ -959,10 +835,6 @@
   }
   .snake-level-picker {
     font-size: 8px;
-    letter-spacing: 1px;
-  }
-  .snake-board-caption {
-    font-size: 6px;
     letter-spacing: 1px;
   }
   .snake-mark-tools button {
@@ -987,10 +859,6 @@
   }
   .snake-action-toolbar .snake-divider {
     margin: 0 2px;
-  }
-  .snake-bottom {
-    flex-direction: column;
-    gap: 10px;
   }
   .snake-region-list {
     gap: 10px;
@@ -1042,17 +910,8 @@
   .snake-play {
     max-width: 476px;
   }
-  .snake-board-caption {
-    font-size: 6px;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-  }
-  .snake-aside {
-    padding-top: 22px;
-  }
   .snake-aside h2 {
-    margin-top: 8px;
-    font-size: 24px;
+    font-size: 22px;
   }
   .snake-aside > p {
     margin-bottom: 14px;
@@ -1071,9 +930,6 @@
   .snake-region-total {
     margin-top: 15px;
   }
-  .snake-aside-note {
-    display: none;
-  }
   .snake-legend {
     margin-top: 17px;
   }
@@ -1091,8 +947,11 @@
     padding-top: 12px;
     padding-bottom: 15px;
   }
-  .snake-bottom {
-    padding-top: 12px;
-    padding-bottom: 12px;
-  }
+}
+
+.snake-storage-warning {
+  margin: 12px 22px;
+  text-align: center;
+  color: #b2705b;
+  font-size: 12px;
 }

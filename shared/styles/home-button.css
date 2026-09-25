@@ -1,0 +1,13 @@
+.home-button {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: #71776e;
+}
+.home-button:hover {
+  background: #eaeae3;
+  color: #343b3a;
+}

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react';
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   CheckCheck,
@@ -17,6 +16,7 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
+import { HomeButton } from '../../../shared/components/HomeButton';
 import { links } from '../../../shared/links';
 import { Board } from './components/Board';
 import { Dialog } from './components/Dialog';
@@ -72,12 +72,8 @@ export default function App() {
             <span className="brand-period">.</span>
           </span>
         </a>
-        <span className="snake-tagline">A little room for possibility.</span>
         <nav className="snake-header-actions" aria-label="Game navigation">
-          <a className="snake-home" href={links.home}>
-            <ArrowLeft size={16} />
-            <span>All games</span>
-          </a>
+          <HomeButton />
           <span className="snake-divider" />
           <button className="snake-help" aria-label="How to play" onClick={() => setHelp(true)}>
             <CircleHelp size={19} />
@@ -96,20 +92,13 @@ export default function App() {
           index < levels.length - 1 ? selectLevel(levels[index + 1].id) : setPicker(true)
         }
       />
-      <footer className="snake-bottom">
-        <span>
-          <i />
-          <i />
-          <i />
-          <i /> A winding path. A clearer head.
-        </span>
-        <span>
-          {saved ? 'PROGRESS SAVED ON THIS DEVICE' : 'STORAGE UNAVAILABLE · KEEP THIS TAB OPEN'}
-        </span>
-      </footer>
+      {!saved && (
+        <p className="snake-storage-warning" role="status">
+          Progress could not be saved. Keep this tab open.
+        </p>
+      )}
       {picker && (
-        <Dialog title="A new little challenge." onClose={() => setPicker(false)}>
-          <p className="snake-dialog-lead">Thirteen winding paths. Take them at your own pace.</p>
+        <Dialog title="Choose a puzzle" onClose={() => setPicker(false)}>
           <div className="snake-level-list">
             {levels.map((item, i) => (
               <button
@@ -139,10 +128,7 @@ export default function App() {
         </Dialog>
       )}
       {help && (
-        <Dialog title="Follow a little logic." onClose={() => setHelp(false)}>
-          <p className="snake-dialog-lead">
-            Find the hidden snake. Give everything else a little space.
-          </p>
+        <Dialog title="How to play" onClose={() => setHelp(false)}>
           <div className="snake-rule">
             <span>
               <Route size={23} />
@@ -161,7 +147,7 @@ export default function App() {
               <Grid2X2 size={23} />
             </span>
             <div>
-              <h3>Every space has its place</h3>
+              <h3>Empty regions</h3>
               <p>
                 Empty cells touching along an edge form a region. Crosses help you keep track, but
                 once the snake is complete, remaining empty cells are filled in for you. Make
@@ -175,7 +161,7 @@ export default function App() {
               <LockKeyhole size={21} />
             </span>
             <div>
-              <h3>A few things are given</h3>
+              <h3>Fixed clues</h3>
               <p>
                 Locked cells are clues and cannot change. A number appears when an empty region is
                 fully surrounded by snake or the board edge. Coral marks a rule conflict.
@@ -183,7 +169,7 @@ export default function App() {
             </div>
           </div>
           <div className="snake-shortcuts">
-            <strong>Make your mark</strong>
+            <strong>Controls</strong>
             <p>
               Choose Snake, Empty, or Erase, then tap a cell. Tap the same mark again to clear it.
               Right-click or Shift-click to mark empty.
@@ -198,7 +184,7 @@ export default function App() {
             </p>
           </div>
           <button className="snake-primary" onClick={() => setHelp(false)}>
-            Let’s find a path <ArrowRight size={17} />
+            Got it <ArrowRight size={17} />
           </button>
         </Dialog>
       )}
@@ -248,7 +234,7 @@ function Game({
   }
   function mark(index: number, alternate = false) {
     if (level.clues.includes(index)) {
-      setNotice('A little certainty: this clue is fixed.');
+      setNotice('This clue is fixed.');
       return;
     }
     if (analysis.solved) return;
@@ -300,14 +286,9 @@ function Game({
       <section className="snake-levelbar" aria-label="Current puzzle">
         <div>
           <button className="snake-level-picker" onClick={onPicker}>
-            <span>{String(index + 1).padStart(2, '0')}</span> THE WINDING COLLECTION{' '}
-            <ChevronDown size={13} />
+            <span>{String(index + 1).padStart(2, '0')}</span> PUZZLES <ChevronDown size={13} />
           </button>
-          <h1>
-            {level.name}
-            <span>✳</span>
-          </h1>
-          <p>Connect the ends. Find a place for every space.</p>
+          <h1>{level.name}</h1>
         </div>
         <div className="snake-progress">
           <div
@@ -321,18 +302,12 @@ function Game({
               {String(marked).padStart(2, '0')}
               <span> / {board.length}</span>
             </strong>
-            <small>CELLS DISCOVERED</small>
+            <small>CELLS MARKED</small>
           </div>
         </div>
       </section>
       <div className="snake-workspace">
         <section className="snake-play" aria-label="Logic Snake puzzle">
-          <div className="snake-board-caption">
-            <span>
-              {level.width} × {level.height} LITTLE POSSIBILITIES
-            </span>
-            <span>NO CLOCK. JUST CURIOSITY.</span>
-          </div>
           <Board
             level={level}
             board={displayBoard}
@@ -373,14 +348,14 @@ function Game({
             aria-live="polite"
           >
             {analysis.solved
-              ? 'Every turn in its place. Nicely done.'
+              ? ''
               : hint
                 ? `Row ${Math.floor(hint.index / level.width) + 1}, column ${(hint.index % level.width) + 1} should be ${hint.cell === 'empty' ? 'empty' : 'snake'}.`
                 : notice ||
                   analysis.messages[0] ||
                   (analysis.unknown === 0
                     ? 'Check the empty regions: each size is needed exactly once.'
-                    : 'A thoughtful tap. A little closer.')}
+                    : '')}
           </p>
           {hint && (
             <button
@@ -391,17 +366,16 @@ function Game({
                 edit(next);
               }}
             >
-              Apply this hint <ArrowRight size={15} />
+              Apply hint <ArrowRight size={15} />
             </button>
           )}
         </section>
         <aside className="snake-aside">
           <div className="snake-regions-heading">
-            <span className="snake-eyebrow">A LITTLE BREATHING ROOM</span>
+            <h2>Empty regions</h2>
             <Grid2X2 size={17} />
           </div>
-          <h2>Make space.</h2>
-          <p>Leave one empty region of each size. Every little space counts.</p>
+          <p>Leave one empty region of each size.</p>
           <div className="snake-region-list" aria-label="Required empty region sizes">
             {analysis.used.map((count, i) => (
               <div
@@ -430,14 +404,6 @@ function Game({
           <div className="snake-region-progress">
             <span style={{ width: `${(finishedRegions / level.top) * 100}%` }} />
           </div>
-          <div className="snake-aside-note">
-            <Route size={20} />
-            <p>
-              One continuous snake.
-              <br />
-              Two ends, plenty of possibility.
-            </p>
-          </div>
           <div className="snake-legend">
             <span>
               <i className="legend-clue" />
@@ -454,19 +420,15 @@ function Game({
         <section className="snake-win" aria-label="Puzzle complete">
           <Sparkles size={24} />
           <div>
-            <h2>A lovely line of thought.</h2>
-            <p>One snake. Every space accounted for.</p>
+            <h2>Puzzle complete</h2>
           </div>
           <button className="snake-primary" onClick={onNext}>
-            {index === levels.length - 1 ? 'Explore the collection' : 'Next puzzle'}
+            {index === levels.length - 1 ? 'Choose a puzzle' : 'Next puzzle'}
             <ArrowRight size={17} />
           </button>
         </section>
       )}
       <div className="snake-controls">
-        <p>
-          <LockKeyhole size={13} />A few clues. The rest is yours.
-        </p>
         <div className="snake-action-toolbar">
           <button onClick={undo} disabled={!history.past.length} title="Undo (U)">
             <Undo2 size={18} />
@@ -483,7 +445,7 @@ function Game({
           <span className="snake-divider" />
           <button className="snake-hint-button" onClick={giveHint} disabled={analysis.solved}>
             <Lightbulb size={18} />
-            <span>A little hint</span>
+            <span>Hint</span>
             <kbd>H</kbd>
           </button>
         </div>
@@ -496,7 +458,7 @@ function Game({
         </button>
       </div>
       {restart && (
-        <Dialog title="A fresh line of thought?" onClose={() => setRestart(false)}>
+        <Dialog title="Restart puzzle?" onClose={() => setRestart(false)}>
           <p className="snake-dialog-lead">
             Clear your marks and keep the original clues. You can undo the restart if you change
             your mind.
@@ -510,7 +472,7 @@ function Game({
                 setRestart(false);
               }}
             >
-              Start fresh <RotateCcw size={16} />
+              Restart <RotateCcw size={16} />
             </button>
           </div>
         </Dialog>

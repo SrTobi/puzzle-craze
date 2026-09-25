@@ -6,7 +6,6 @@ import {
   Check,
   CircleHelp,
   Hand,
-  Home,
   Heart,
   HeartCrack,
   Lightbulb,
@@ -35,6 +34,7 @@ import type { GeneratedPuzzle } from './generation/generator';
 import type { Level } from './game/types';
 import { CELL_SIZE } from './game/arrowGeometry';
 import { MAX_LIVES } from './game/playState';
+import { HomeButton } from '../../../shared/components/HomeButton';
 import { links } from '../../../shared/links';
 import { boardFit } from './game/cameraBounds';
 
@@ -285,9 +285,7 @@ function Game({
           </span>
         </a>
         <div className="header-actions">
-          <a className="icon-button" href={links.home} aria-label="All games" title="All games">
-            <Home size={19} />
-          </a>
+          <HomeButton className="icon-button" />
           <button
             className="new-puzzle-button"
             aria-label="New puzzle"
