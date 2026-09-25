@@ -61,7 +61,7 @@ export default function App() {
             </a>
             <a className="game-card snake-card" href={links.logicSnake}>
               <div className="game-art snake-art" aria-hidden="true">
-                <span className="game-status upcoming">In the making</span>
+                <span className="game-status">Ready to play</span>
                 <svg viewBox="0 0 440 220" fill="none" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M122 168h72v-56h-40V56h105v56h53" stroke="#80a376" strokeWidth="25" />
                   <circle cx="313" cy="107" r="3" fill="#f9faf2" />
@@ -69,7 +69,7 @@ export default function App() {
                   <path d="M338 112h10" stroke="#80a376" strokeWidth="3" />
                   <rect x="254" y="157" width="18" height="18" rx="5" fill="#d9ae59" />
                 </svg>
-                <span className="art-caption">SOMETHING CLEVER IS TAKING SHAPE.</span>
+                <span className="art-caption">A WINDING PATH. A CLEARER HEAD.</span>
               </div>
               <div className="card-copy">
                 <p className="site-kicker">02 / A new direction</p>
@@ -77,12 +77,11 @@ export default function App() {
                   Logic Snake <MoveUpRight size={25} />
                 </h3>
                 <p>
-                  Our next puzzle is taking shape. A new game, a fresh challenge, and plenty of
-                  curious turns to come.
+                  Find the hidden snake and give every empty space its place. Thirteen thoughtful
+                  puzzles, one clever turn at a time.
                 </p>
                 <span className="card-action">
-                  Take a peek <ArrowRight size={17} />
-                  <span className="coming-soon">Coming soon</span>
+                  Play Logic Snake <ArrowRight size={17} />
                 </span>
               </div>
             </a>
