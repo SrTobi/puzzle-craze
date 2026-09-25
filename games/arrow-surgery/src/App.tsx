@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
-  ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
   Check,
@@ -285,7 +284,6 @@ function Game({
             <span className="brand-period">.</span>
           </span>
         </a>
-        <span className="brand-tagline">a little untangling for your mind</span>
         <div className="header-actions">
           <a className="icon-button" href={links.home} aria-label="All games" title="All games">
             <Home size={19} />
@@ -336,19 +334,8 @@ function Game({
       <section className="game" aria-label="Arrow Surgery puzzle">
         <div className="level-bar">
           <div className="level-info">
-            <div className="eyebrow">
-              <span className="level-number">{generated ? '✳' : '01'}</span>{' '}
-              {generated ? 'A TANGLE OF YOUR OWN' : 'THE FIRST UNTANGLE'}
-            </div>
-            <h1>
-              {level.name}
-              <span className="title-star">✳</span>
-            </h1>
-            <p>{level.description}</p>
-          </div>
-          <div className="level-mood">
-            <span className="easy-dot" /> {generated ? 'FIND YOUR FLOW' : 'NICE & EASY'}{' '}
-            <span className="mood-divider">/</span> THREE LIVES. TAKE YOUR TIME.
+            <h1>{level.name}</h1>
+            {generated && <p>{level.description}</p>}
           </div>
           <div className="progress-box" aria-label={`${freed} of ${total} arrows freed`}>
             <div
@@ -385,11 +372,6 @@ function Game({
         </div>
 
         <div className="play-area">
-          <div className="board-watermark" aria-hidden="true">
-            <span>LESS TANGLE</span>
-            <ArrowDownLeft size={16} />
-            <span>MORE FLOW</span>
-          </div>
           <Board
             level={level}
             removed={removed}
@@ -429,20 +411,14 @@ function Game({
                 )}
                 <span>{toast.message}</span>
               </>
-            ) : (
-              <>
-                <span className="tiny-arrow">↗</span>
-                <span>
-                  {queued.length > 0
-                    ? `${queued.length} ${queued.length === 1 ? 'arrow is' : 'arrows are'} waiting in red. Clear a path to set them free.`
-                    : freed === 0
-                      ? 'Find a clear path. Give an arrow a little nudge.'
-                      : isComplete
-                        ? 'All clear. Nicely done.'
-                        : 'A little more room to breathe.'}
-                </span>
-              </>
-            )}
+            ) : queued.length > 0 ? (
+              <span>
+                {queued.length} {queued.length === 1 ? 'arrow waiting' : 'arrows waiting'}. Clear a
+                path to release {queued.length === 1 ? 'it' : 'them'}.
+              </span>
+            ) : freed === 0 ? (
+              <span>Tap an arrow to launch it.</span>
+            ) : null}
           </div>
         </div>
 
@@ -450,7 +426,7 @@ function Game({
           <div className="gesture-note">
             <Hand size={17} />
             <span>
-              Drag to explore<span className="note-dot">·</span>Scroll to zoom
+              Drag to pan<span className="note-dot">·</span>Scroll to zoom
             </span>
           </div>
           <div className="action-toolbar" aria-label="Game controls">
@@ -466,7 +442,7 @@ function Game({
               title="Show a clear arrow (H)"
             >
               <Lightbulb size={19} />
-              <span>A little hint</span>
+              <span>Hint</span>
               <span className="keycap">H</span>
             </button>
           </div>
@@ -499,19 +475,6 @@ function Game({
             </button>
           </div>
         </footer>
-        <div className="bottom-caption">
-          <span className="color-dots">
-            {palette.slice(0, 4).map((color) => (
-              <i key={color} style={{ background: color }} />
-            ))}
-          </span>
-          A clear board. A clearer head.
-          <span className="level-caption">
-            {generated
-              ? `${generated.generation.stats.cells.toLocaleString()} POINTS · FULLY WOVEN`
-              : 'HANDCRAFTED LEVEL 01'}
-          </span>
-        </div>
       </section>
 
       {making && (
