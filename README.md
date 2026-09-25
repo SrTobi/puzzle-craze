@@ -1,5 +1,7 @@
 # Puzzle Craze
 
+**[Play Puzzle Craze](https://srtobi.github.io/puzzle-craze/)**
+
 A collection of browser games built with React, TypeScript, and Vite. The landing page introduces each game; each game has its own page and source directory.
 
 | Page          | URL                     | Source                 |
