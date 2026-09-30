@@ -87,7 +87,8 @@ export function parseLevel(value: unknown): Level {
     )
   )
     fail('missing metadata');
-  if (!['easy', 'medium', 'hard'].includes(level.difficulty)) fail('unknown difficulty');
+  if (!['easy', 'medium', 'hard', 'super-hard'].includes(level.difficulty))
+    fail('unknown difficulty');
   if (
     !level.grid ||
     ![level.grid.columns, level.grid.rows].every(

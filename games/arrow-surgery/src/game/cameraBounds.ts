@@ -13,11 +13,13 @@ export interface ViewportSize {
 }
 
 export function boardFit(grid: Level['grid'], size: ViewportSize) {
+  // At 100% zoom, reserve 15% of the viewport along each edge.
+  const availableFraction = 0.7;
   return Math.max(
     0.0001,
     Math.min(
-      (size.width - 70) / Math.max(CELL_SIZE, (grid.columns - 1) * CELL_SIZE),
-      (size.height - 62) / Math.max(CELL_SIZE, (grid.rows - 1) * CELL_SIZE),
+      (size.width * availableFraction) / Math.max(CELL_SIZE, (grid.columns - 1) * CELL_SIZE),
+      (size.height * availableFraction) / Math.max(CELL_SIZE, (grid.rows - 1) * CELL_SIZE),
       1.18,
     ),
   );

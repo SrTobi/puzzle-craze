@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Download, RefreshCw, Upload } from 'lucide-react';
+import { ArrowRight, RefreshCw, Upload } from 'lucide-react';
 import { Modal } from './Modal';
 import { MAX_SIDE } from '../game/grid';
-import type { GeneratedPuzzle, GenerationProgress } from '../generation/generator';
+import type {
+  GeneratedPuzzle,
+  GenerationProgress,
+  GeneratorDifficulty,
+} from '../generation/generator';
 import { analyzeImage, pixelsToMask, shapeMask } from '../generation/masks';
 import type { Shape } from '../generation/masks';
 
@@ -30,7 +34,7 @@ export function Generator({
   const [columns, setColumns] = useState(24);
   const [rows, setRows] = useState(24);
   const [seed, setSeed] = useState(() => String(Math.floor(Math.random() * 1000000)));
-  const [length, setLength] = useState(10);
+  const [difficulty, setDifficulty] = useState<GeneratorDifficulty>('hard');
   const [repair, setRepair] = useState(true);
   const [manualThreshold, setManualThreshold] = useState<number | null>(null);
   const [invert, setInvert] = useState(false);
@@ -39,7 +43,6 @@ export function Generator({
   const [loadingImage, setLoadingImage] = useState(false);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
-  const [result, setResult] = useState<GeneratedPuzzle | null>(null);
   const worker = useRef<Worker | null>(null);
   const imageRequest = useRef(0);
   const preview = useRef<HTMLCanvasElement>(null);
@@ -72,9 +75,8 @@ export function Generator({
   const filled = useMemo(() => mask.reduce((sum, n) => sum + n, 0), [mask]);
 
   useEffect(() => {
-    setResult(null);
     setError('');
-  }, [mask, seed, length, repair]);
+  }, [mask, seed, difficulty, repair]);
   useEffect(
     () => () => {
       source?.close();
@@ -95,22 +97,12 @@ export function Generator({
     canvas.height = rows;
     const ctx = canvas.getContext('2d')!;
     const pixels = ctx.createImageData(columns, rows);
-    const final = result?.generation.finalMask.join('');
     for (let i = 0; i < mask.length; i++) {
-      const enabled = final ? final[i] === '1' : Boolean(mask[i]);
-      const added = enabled && !mask[i],
-        removed = !enabled && mask[i];
-      const color = added
-        ? [66, 169, 154]
-        : removed
-          ? [239, 129, 110]
-          : enabled
-            ? [130, 112, 223]
-            : [237, 237, 229];
+      const color = mask[i] ? [130, 112, 223] : [237, 237, 229];
       pixels.data.set([...color, 255], i * 4);
     }
     ctx.putImageData(pixels, 0, 0);
-  }, [mask, columns, rows, validSize, result]);
+  }, [mask, columns, rows, validSize]);
 
   const cancel = () => {
     worker.current?.terminate();
@@ -119,7 +111,6 @@ export function Generator({
   };
   const generate = () => {
     cancel();
-    setResult(null);
     setError('');
     setProgress({ phase: 'Starting a fresh tangle', fraction: 0 });
     const instance = new Worker(new URL('../generation/generator.worker.ts', import.meta.url), {
@@ -130,9 +121,9 @@ export function Generator({
       if (worker.current !== instance) return;
       if (event.data.type === 'progress') setProgress(event.data.progress);
       else {
-        if (event.data.type === 'result') setResult(event.data.result);
-        else setError(event.data.message);
         cancel();
+        if (event.data.type === 'result') onPlay(event.data.result);
+        else setError(event.data.message);
       }
     };
     instance.onerror = () => {
@@ -146,7 +137,7 @@ export function Generator({
       rows,
       mask,
       seed,
-      length,
+      difficulty,
       repair,
       name:
         shape === 'image'
@@ -193,27 +184,16 @@ export function Generator({
         <div className="mask-preview">
           <canvas
             ref={preview}
-            aria-label="Shape preview. Purple points will be filled with arrows; green marks additions and coral marks removals."
+            aria-label="Shape preview. Purple points define the puzzle shape."
           />
-          <strong>{filled.toLocaleString()} points to fill</strong>
-          <span>
-            {result
-              ? `${result.generation.stats.arrows.toLocaleString()} arrows · 100% covered`
-              : 'Every purple point becomes part of an arrow.'}
-          </span>
-          {result && (
-            <span>
-              {result.generation.repairs.length
-                ? `Shape edits: ${result.generation.repairs.filter((r) => r.enabled).length} added · ${result.generation.repairs.filter((r) => !r.enabled).length} removed`
-                : 'Original shape preserved.'}
-            </span>
-          )}
+          <strong>{filled.toLocaleString()} points in the shape</strong>
+          <span>Unfilled points remain empty.</span>
         </div>
         <fieldset className="generator-fields" disabled={Boolean(progress) || loadingImage}>
           <label>
             Shape
             <select value={shape} onChange={(e) => setShape(e.target.value as Shape | 'image')}>
-              <option value="rectangle">Filled rectangle</option>
+              <option value="rectangle">Rectangle</option>
               <option value="heart">Heart</option>
               <option value="cat">Cat</option>
               <option value="butterfly">Butterfly</option>
@@ -350,14 +330,15 @@ export function Generator({
             </div>
           </label>
           <label>
-            Arrow length · {length}
-            <input
-              type="range"
-              min="4"
-              max="24"
-              value={length}
-              onChange={(e) => setLength(Number(e.target.value))}
-            />
+            Difficulty
+            <select
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value as GeneratorDifficulty)}
+            >
+              <option value="easy">Easy</option>
+              <option value="hard">Hard</option>
+              <option value="super-hard">Super hard</option>
+            </select>
           </label>
           <label className="check-label">
             <input type="checkbox" checked={repair} onChange={(e) => setRepair(e.target.checked)} />{' '}
@@ -383,24 +364,13 @@ export function Generator({
         </div>
       )}
       <div className="generator-actions">
-        {result ? (
-          <>
-            <button className="secondary-button" onClick={() => downloadPuzzle(result)}>
-              <Download size={17} /> Save puzzle
-            </button>
-            <button className="primary-button" onClick={() => onPlay(result)}>
-              Play this tangle <ArrowRight size={18} />
-            </button>
-          </>
-        ) : (
-          <button
-            className="primary-button"
-            disabled={Boolean(progress) || loadingImage || !validSize || filled === 0}
-            onClick={generate}
-          >
-            Weave my puzzle <ArrowRight size={18} />
-          </button>
-        )}
+        <button
+          className="primary-button"
+          disabled={Boolean(progress) || loadingImage || !validSize || filled === 0}
+          onClick={generate}
+        >
+          Start puzzle <ArrowRight size={18} />
+        </button>
       </div>
       <button className="original-level" onClick={onOriginal} disabled={Boolean(progress)}>
         Return to First light
