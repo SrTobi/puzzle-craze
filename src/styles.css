@@ -44,10 +44,12 @@
 }
 .game-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 26px;
 }
 .game-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   min-width: 0;
   border: 1px solid #dfdfd4;
@@ -74,6 +76,19 @@
 .snake-art {
   background-color: #eaf0e3;
   background-image: radial-gradient(#c8d4bd 1px, transparent 1px);
+}
+.water-art {
+  background-color: #e8f0ec;
+  background-image: radial-gradient(#c4d7cd 1px, transparent 1px);
+}
+.water-art .art-caption,
+.water-card .card-action {
+  color: #608f81;
+}
+@media (min-width: 701px) and (max-width: 1000px) {
+  .game-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .game-art svg {
   width: 100%;
@@ -103,6 +118,9 @@
   color: #627554;
 }
 .card-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 27px 30px 30px;
 }
 .card-copy .site-kicker {
@@ -134,7 +152,8 @@
   font-weight: 600;
   font-size: 13px;
   color: #7460a8;
-  margin-top: 25px;
+  margin-top: auto;
+  padding-top: 25px;
 }
 .snake-card .card-action {
   color: #607750;
