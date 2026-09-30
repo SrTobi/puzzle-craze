@@ -98,6 +98,7 @@ function analyzeBoard(level: Level, board: Cell[]) {
   }
   const snakeVisited = new Set<number>();
   let components = 0;
+  let connectedSnake: number[] = [];
   for (const start of snakeCells) {
     if (snakeVisited.has(start)) continue;
     components++;
@@ -111,6 +112,7 @@ function analyzeBoard(level: Level, board: Cell[]) {
         }
       }
     }
+    if (group.filter((i) => board[i] === 'head').length === 2) connectedSnake = group;
     if (group.every((i) => neighbors(level, i).filter((n) => isSnake(board[n])).length === 2)) {
       group.forEach((i) => errors.add(i));
       messages.add('The snake forms a loop. It needs to connect the two endpoints.');
@@ -135,13 +137,20 @@ function analyzeBoard(level: Level, board: Cell[]) {
     unknown,
     solved,
     snakeConnected,
+    connectedSnake,
     regionMismatch: false,
   };
 }
 
 export function analyze(level: Level, board: Cell[]) {
   const current = analyzeBoard(level, board);
-  if (!current.snakeConnected) return current;
+  if (!current.snakeConnected) {
+    if (current.connectedSnake.length > 0) {
+      current.connectedSnake.forEach((i) => current.errors.add(i));
+      current.messages.push('The endpoints are connected, but the puzzle is not solved.');
+    }
+    return current;
+  }
 
   // Crosses are optional: a finished snake determines every remaining empty cell.
   // Once connected, check the spaces even if the player has not crossed them out.
@@ -151,6 +160,7 @@ export function analyze(level: Level, board: Cell[]) {
   );
   if (completed.solved) return { ...completed, unknown: current.unknown };
 
+  current.connectedSnake.forEach((i) => completed.errors.add(i));
   const sizes = completed.regions.map((region) => region.cells.length).sort((a, b) => a - b);
   const required =
     level.top === 0
@@ -162,6 +172,7 @@ export function analyze(level: Level, board: Cell[]) {
     regionMismatch: true,
     messages: [
       `The snake is connected, but the empty regions have sizes ${sizes.join(', ') || 'none'}. You need ${required}. Adjust the snake’s path.`,
+      'The endpoints are connected, but the puzzle is not solved.',
     ],
   };
 }

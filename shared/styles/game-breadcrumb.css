@@ -1,0 +1,31 @@
+.game-breadcrumb {
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+.game-breadcrumb ol,
+.game-breadcrumb li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.game-breadcrumb ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.breadcrumb-home {
+  display: inline-flex;
+  border-radius: 13px;
+}
+.breadcrumb-home:hover .site-mark {
+  background: #ded6ee;
+}
+.breadcrumb-separator {
+  color: #a1a69b;
+}
+@media (max-width: 760px) {
+  .game-breadcrumb ol,
+  .game-breadcrumb li {
+    gap: 7px;
+  }
+}

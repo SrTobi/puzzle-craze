@@ -70,6 +70,34 @@ describe('imported Flutter puzzles', () => {
 });
 
 describe('snake and region rules', () => {
+  it('requires correct region sizes even when the endpoints are connected', () => {
+    for (const emptyRow of ['???', '...']) {
+      const level = fixture(['X+X', emptyRow], 2);
+      const result = analyze(level, level.solution);
+      expect(result.solved).toBe(false);
+      expect([0, 1, 2].every((i) => result.errors.has(i))).toBe(true);
+      expect(result.messages).toContain(
+        'The endpoints are connected, but the puzzle is not solved.',
+      );
+    }
+  });
+  it('marks the entire connected snake including branches', () => {
+    const level = fixture(['X+X', '?+?']);
+    const result = analyze(level, level.solution);
+    expect([0, 1, 2, 4].every((i) => result.errors.has(i))).toBe(true);
+    expect(result.errors.has(3)).toBe(false);
+    expect(result.errors.has(5)).toBe(false);
+  });
+  it('clears the connected-snake error when the path is reopened', () => {
+    const level = fixture(['X+X', '???'], 2);
+    const reopened = markCell(level, level.solution, 1, 'erase');
+    expect(analyze(level, reopened).errors.size).toBe(0);
+  });
+  it('does not mark a disconnected unfinished snake as a connected-snake error', () => {
+    const level = fixture(['X+?', '???', '?+X']);
+    expect(analyze(level, level.solution).errors.size).toBe(0);
+  });
+
   it('does not infer a win for an unfinished snake or an extra snake cell', () => {
     const level = levels[0];
     const board = level.solution.map((cell): Cell => (cell === 'empty' ? 'unknown' : cell));
@@ -90,14 +118,14 @@ describe('snake and region rules', () => {
       expect(result.messages[0]).toContain('The snake is connected');
       expect(result.messages[0]).toContain('sizes 3');
       expect(result.messages[0]).toContain('one region of each size: 1, 2');
-      expect([...result.errors]).toEqual([3, 4, 5]);
+      expect([...result.errors].sort()).toEqual([0, 1, 2, 3, 4, 5]);
     }
   });
   it('reports missing required regions even when existing regions are valid', () => {
     const level = fixture(['X+X'], 1);
     const result = analyze(level, level.solution);
     expect(result.regionMismatch).toBe(true);
-    expect(result.errors.size).toBe(0);
+    expect([...result.errors].sort()).toEqual([0, 1, 2]);
     expect(result.messages[0]).toContain('sizes none');
   });
   it('reports duplicate inferred regions and clears the error when the path is reopened', () => {

@@ -22,15 +22,8 @@
 .site-brand > span:last-child {
   font-weight: 500;
 }
-.site-mark {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
+.site-brand > .site-mark {
   margin-right: 12px;
-  border-radius: 13px;
-  background: #e9e4f5;
-  color: #7761b8;
 }
 .site-nav {
   display: inline-flex;
@@ -81,9 +74,7 @@
   .site-brand {
     font-size: 20px;
   }
-  .site-mark {
-    width: 32px;
-    height: 32px;
+  .site-brand > .site-mark {
     margin-right: 8px;
   }
   .site-nav {
