@@ -1096,3 +1096,64 @@
     padding-bottom: 12px;
   }
 }
+
+.snake-tutorial .snake-board {
+  width: min(100%, var(--tutorial-board-width));
+  margin: 38px auto 0;
+}
+.snake-tutorial-guide {
+  padding: 18px 20px;
+  border: 1px solid #dfd8ed;
+  border-radius: 14px;
+  background: #f3eff8;
+  color: #75608e;
+}
+.snake-tutorial-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.snake-tutorial-heading button {
+  font-size: 11px;
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 6px 0;
+}
+.snake-tutorial-guide p {
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 9px 0 0;
+}
+.snake-cell.tutorial-target {
+  outline: 2px solid #a28aca;
+  outline-offset: -3px;
+  background: #eee7f6;
+  z-index: 3;
+}
+.snake-tutorial-pointer {
+  position: absolute;
+  left: calc(50% - 15px);
+  top: -30px;
+  color: #9477ba;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px #fffefa);
+}
+.snake-mark-tools button.tutorial-tool {
+  outline: 2px solid #a28aca;
+  outline-offset: -2px;
+  color: #75608e;
+}
+.snake-tutorial-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #75608e;
+  font-size: 12px;
+  padding: 10px 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

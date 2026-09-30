@@ -77,8 +77,8 @@ export default function App() {
                   Logic Snake <MoveUpRight size={25} />
                 </h3>
                 <p>
-                  Find the hidden snake and give every empty space its place. Thirteen thoughtful
-                  puzzles, one clever turn at a time.
+                  Find the hidden snake and give every empty space its place. Three guided first
+                  steps, then thirteen thoughtful puzzles, one clever turn at a time.
                 </p>
                 <span className="card-action">
                   Play Logic Snake <ArrowRight size={17} />

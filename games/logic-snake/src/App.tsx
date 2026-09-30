@@ -30,7 +30,8 @@ import {
   type Level,
   type Tool,
 } from './game/engine';
-import { levels } from './game/levels';
+import { levels, levelNumber } from './game/levels';
+import { tutorialLevels, tutorialStep } from './game/tutorials';
 import { loadProgress, STORAGE_KEY } from './game/storage';
 
 export default function App() {
@@ -109,20 +110,28 @@ export default function App() {
       </footer>
       {picker && (
         <Dialog title="A new little challenge." onClose={() => setPicker(false)}>
-          <p className="snake-dialog-lead">Thirteen winding paths. Take them at your own pace.</p>
+          <p className="snake-dialog-lead">
+            Three guided first steps, then thirteen winding paths. Take them at your own pace.
+          </p>
           <div className="snake-level-list">
-            {levels.map((item, i) => (
+            {levels.map((item) => (
               <button
                 key={item.id}
                 className={item.id === level.id ? 'selected' : ''}
                 onClick={() => selectLevel(item.id)}
                 aria-current={item.id === level.id ? 'true' : undefined}
               >
-                <span className="level-list-number">{String(i + 1).padStart(2, '0')}</span>
+                <span className="level-list-number">{levelNumber(item)}</span>
                 <span>
                   <strong>{item.name}</strong>
                   <small>
-                    {item.width} × {item.height} · Regions 1–{item.top}
+                    {item.tutorial ? 'Tutorial · ' : ''}
+                    {item.width} × {item.height} ·{' '}
+                    {item.top === 0
+                      ? 'Just connect'
+                      : item.top === 1
+                        ? 'One empty cell'
+                        : `Regions 1–${item.top}`}
                   </small>
                 </span>
                 {progress.completed.includes(item.id) ? (
@@ -182,6 +191,15 @@ export default function App() {
               </p>
             </div>
           </div>
+          <button
+            className="snake-tutorial-link"
+            onClick={() => {
+              setHelp(false);
+              selectLevel(tutorialLevels[0].id);
+            }}
+          >
+            Try the three tutorial levels <ArrowRight size={16} />
+          </button>
           <div className="snake-shortcuts">
             <strong>Make your mark</strong>
             <p>
@@ -227,6 +245,7 @@ function Game({
     future: [],
   });
   const [tool, setTool] = useState<Tool>('snake');
+  const [guided, setGuided] = useState(true);
   const [notice, setNotice] = useState('');
   const [hint, setHint] = useState<ReturnType<typeof nextHint>>(null);
   const [restart, setRestart] = useState(false);
@@ -236,6 +255,7 @@ function Game({
   const displayBoard = analysis.solved
     ? board.map((cell): Cell => (cell === 'unknown' ? 'empty' : cell))
     : board;
+  const step = guided && !analysis.solved ? tutorialStep(level, board) : null;
   const finishedRegions = analysis.used.filter((count) => count === 1).length;
   useEffect(
     () => onChange(level.id, board, analysis.solved),
@@ -296,18 +316,17 @@ function Game({
     return () => window.removeEventListener('keydown', handle);
   });
   return (
-    <main className="snake-game">
+    <main className={`snake-game${level.tutorial ? ' snake-tutorial' : ''}`}>
       <section className="snake-levelbar" aria-label="Current puzzle">
         <div>
           <button className="snake-level-picker" onClick={onPicker}>
-            <span>{String(index + 1).padStart(2, '0')}</span> THE WINDING COLLECTION{' '}
-            <ChevronDown size={13} />
+            <span>{levelNumber(level)}</span> THE WINDING COLLECTION <ChevronDown size={13} />
           </button>
           <h1>
             {level.name}
             <span>✳</span>
           </h1>
-          <p>Connect the ends. Find a place for every space.</p>
+          <p>{level.tutorial?.description ?? 'Connect the ends. Find a place for every space.'}</p>
         </div>
         <div className="snake-progress">
           <div
@@ -333,19 +352,45 @@ function Game({
             </span>
             <span>NO CLOCK. JUST CURIOSITY.</span>
           </div>
+          {level.tutorial && (
+            <div className="snake-tutorial-guide">
+              <div className="snake-tutorial-heading">
+                <span>
+                  {analysis.solved
+                    ? 'LESSON COMPLETE'
+                    : step
+                      ? `STEP ${step.position + 1} OF ${step.total}`
+                      : 'EXPLORE AT YOUR OWN PACE'}
+                </span>
+                {!analysis.solved && (
+                  <button onClick={() => setGuided((value) => !value)}>
+                    {guided ? 'Hide guidance' : 'Show guidance'}
+                  </button>
+                )}
+              </div>
+              <p id="snake-tutorial-instruction" role="status" aria-live="polite">
+                {analysis.solved
+                  ? 'You’ve got it. Take your next little step below.'
+                  : step
+                    ? `${tool !== step.tool ? `Choose ${step.tool === 'snake' ? 'Snake' : 'Empty'} below, then: ` : ''}${step.text}`
+                    : level.tutorial.lesson}
+              </p>
+            </div>
+          )}
           <Board
             level={level}
             board={displayBoard}
             regions={analysis.regions}
             errors={analysis.errors}
             hint={hint?.index ?? null}
+            tutorialTarget={step?.index ?? null}
             onMark={mark}
           />
           <div className="snake-mark-tools" role="group" aria-label="Cell marking tool">
             <button
               aria-pressed={tool === 'snake'}
               onClick={() => setTool('snake')}
-              className={tool === 'snake' ? 'active' : ''}
+              className={`${tool === 'snake' ? 'active' : ''}${step?.tool === 'snake' && tool !== 'snake' ? ' tutorial-tool' : ''}`}
             >
               <Route size={18} />
               Snake<kbd>S</kbd>
@@ -353,7 +398,7 @@ function Game({
             <button
               aria-pressed={tool === 'empty'}
               onClick={() => setTool('empty')}
-              className={tool === 'empty' ? 'active empty-tool' : ''}
+              className={`${tool === 'empty' ? 'active empty-tool' : ''}${step?.tool === 'empty' && tool !== 'empty' ? ' tutorial-tool' : ''}`}
             >
               <X size={18} />
               Empty<kbd>E</kbd>
@@ -368,19 +413,21 @@ function Game({
             </button>
           </div>
           <p
-            className={`snake-status${analysis.errors.size ? ' conflict' : ''}`}
+            className={`snake-status${analysis.errors.size || analysis.regionMismatch ? ' conflict' : ''}`}
             role="status"
             aria-live="polite"
           >
-            {analysis.solved
-              ? 'Every turn in its place. Nicely done.'
-              : hint
-                ? `Row ${Math.floor(hint.index / level.width) + 1}, column ${(hint.index % level.width) + 1} should be ${hint.cell === 'empty' ? 'empty' : 'snake'}.`
-                : notice ||
-                  analysis.messages[0] ||
-                  (analysis.unknown === 0
-                    ? 'Check the empty regions: each size is needed exactly once.'
-                    : 'A thoughtful tap. A little closer.')}
+            {analysis.regionMismatch
+              ? analysis.messages[0]
+              : analysis.solved
+                ? 'Every turn in its place. Nicely done.'
+                : hint
+                  ? `Row ${Math.floor(hint.index / level.width) + 1}, column ${(hint.index % level.width) + 1} should be ${hint.cell === 'empty' ? 'empty' : 'snake'}.`
+                  : notice ||
+                    analysis.messages[0] ||
+                    (analysis.unknown === 0
+                      ? 'Check the empty regions: each size is needed exactly once.'
+                      : 'A thoughtful tap. A little closer.')}
           </p>
           {hint && (
             <button
@@ -400,36 +447,43 @@ function Game({
             <span className="snake-eyebrow">A LITTLE BREATHING ROOM</span>
             <Grid2X2 size={17} />
           </div>
-          <h2>Make space.</h2>
-          <p>Leave one empty region of each size. Every little space counts.</p>
-          <div className="snake-region-list" aria-label="Required empty region sizes">
-            {analysis.used.map((count, i) => (
-              <div
-                key={i}
-                className={`snake-region-row${count === 1 ? ' done' : count > 1 ? ' conflict' : ''}`}
-                aria-label={`Size ${i + 1}: ${count === 1 ? 'complete' : count > 1 ? 'duplicate' : 'needed'}`}
-              >
-                <span className="region-number">{i + 1}</span>
-                <span className="region-mini" aria-hidden="true">
-                  {Array.from({ length: i + 1 }, (_, j) => (
-                    <i key={j} />
-                  ))}
-                </span>
-                <span className="region-state">
-                  {count === 1 ? <Check size={15} /> : count > 1 ? <X size={15} /> : <span />}
-                </span>
+          <h2>{level.top === 0 ? 'Just connect.' : 'Make space.'}</h2>
+          <p>
+            {level.tutorial?.lesson ??
+              'Leave one empty region of each size. Every little space counts.'}
+          </p>
+          {level.top > 0 && (
+            <>
+              <div className="snake-region-list" aria-label="Required empty region sizes">
+                {analysis.used.map((count, i) => (
+                  <div
+                    key={i}
+                    className={`snake-region-row${count === 1 ? ' done' : count > 1 ? ' conflict' : ''}`}
+                    aria-label={`Size ${i + 1}: ${count === 1 ? 'complete' : count > 1 ? 'duplicate' : 'needed'}`}
+                  >
+                    <span className="region-number">{i + 1}</span>
+                    <span className="region-mini" aria-hidden="true">
+                      {Array.from({ length: i + 1 }, (_, j) => (
+                        <i key={j} />
+                      ))}
+                    </span>
+                    <span className="region-state">
+                      {count === 1 ? <Check size={15} /> : count > 1 ? <X size={15} /> : <span />}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="snake-region-total">
-            <span>
-              {finishedRegions} of {level.top} regions found
-            </span>
-            <span>{Math.round((finishedRegions / level.top) * 100)}%</span>
-          </div>
-          <div className="snake-region-progress">
-            <span style={{ width: `${(finishedRegions / level.top) * 100}%` }} />
-          </div>
+              <div className="snake-region-total">
+                <span>
+                  {finishedRegions} of {level.top} regions found
+                </span>
+                <span>{Math.round((finishedRegions / level.top) * 100)}%</span>
+              </div>
+              <div className="snake-region-progress">
+                <span style={{ width: `${(finishedRegions / level.top) * 100}%` }} />
+              </div>
+            </>
+          )}
           <div className="snake-aside-note">
             <Route size={20} />
             <p>

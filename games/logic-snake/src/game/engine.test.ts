@@ -9,7 +9,7 @@ import {
   type Cell,
   type Level,
 } from './engine';
-import { levels } from './levels';
+import { puzzleLevels as levels } from './levels';
 import { decodeProgress } from './storage';
 
 const fixture = (rows: string[], top = 3): Level => ({
@@ -82,7 +82,44 @@ describe('snake and region rules', () => {
   });
   it('requires correct region sizes even when the endpoints are connected', () => {
     const level = fixture(['X+X', '???'], 2);
-    expect(analyze(level, level.solution).solved).toBe(false);
+    for (const bottom of ['???', '.??', '...']) {
+      const board = fixture(['X+X', bottom], 2).solution;
+      const result = analyze(level, board);
+      expect(result.solved).toBe(false);
+      expect(result.regionMismatch).toBe(true);
+      expect(result.messages[0]).toContain('The snake is connected');
+      expect(result.messages[0]).toContain('sizes 3');
+      expect(result.messages[0]).toContain('one region of each size: 1, 2');
+      expect([...result.errors]).toEqual([3, 4, 5]);
+    }
+  });
+  it('reports missing required regions even when existing regions are valid', () => {
+    const level = fixture(['X+X'], 1);
+    const result = analyze(level, level.solution);
+    expect(result.regionMismatch).toBe(true);
+    expect(result.errors.size).toBe(0);
+    expect(result.messages[0]).toContain('sizes none');
+  });
+  it('reports duplicate inferred regions and clears the error when the path is reopened', () => {
+    const level = fixture(['?X?', '?+?', '?X?'], 2);
+    const result = analyze(level, level.solution);
+    expect(result.regionMismatch).toBe(true);
+    expect(result.messages[0]).toContain('sizes 3, 3');
+    const reopened = [...level.solution];
+    reopened[4] = 'unknown';
+    const next = analyze(level, reopened);
+    expect(next.regionMismatch).toBe(false);
+    expect(next.messages).toEqual([]);
+    expect(next.errors.size).toBe(0);
+  });
+  it('does not describe branched or disconnected snakes as connected', () => {
+    for (const rows of [
+      ['X+X', '?+?'],
+      ['X?X', '???'],
+    ]) {
+      const level = fixture(rows, 1);
+      expect(analyze(level, level.solution).regionMismatch).toBe(false);
+    }
   });
   it('undoes an inferred win without keeping automatically displayed empty marks', () => {
     const level = levels[0];

@@ -1,3 +1,5 @@
+import type { Tutorial } from './tutorials';
+
 export type Cell = 'unknown' | 'empty' | 'snake' | 'head';
 export type Tool = 'snake' | 'empty' | 'erase';
 export interface Level {
@@ -9,6 +11,7 @@ export interface Level {
   solution: Cell[];
   clues: number[];
   moves: number[];
+  tutorial?: Tutorial;
 }
 
 export const isSnake = (cell: Cell) => cell === 'snake' || cell === 'head';
@@ -114,26 +117,53 @@ function analyzeBoard(level: Level, board: Cell[]) {
     }
   }
   const unknown = board.filter((cell) => cell === 'unknown').length;
-  const solved =
-    unknown === 0 &&
-    errors.size === 0 &&
+  const snakeConnected =
     components === 1 &&
     board.filter((cell) => cell === 'head').length === 2 &&
-    used.every((count) => count === 1);
-  return { regions, used, errors, messages: [...messages], unknown, solved };
+    snakeCells.every(
+      (i) =>
+        neighbors(level, i).filter((n) => isSnake(board[n])).length ===
+        (board[i] === 'head' ? 1 : 2),
+    );
+  const solved =
+    unknown === 0 && errors.size === 0 && snakeConnected && used.every((count) => count === 1);
+  return {
+    regions,
+    used,
+    errors,
+    messages: [...messages],
+    unknown,
+    solved,
+    snakeConnected,
+    regionMismatch: false,
+  };
 }
 
 export function analyze(level: Level, board: Cell[]) {
   const current = analyzeBoard(level, board);
-  if (current.unknown === 0 || current.errors.size > 0) return current;
+  if (!current.snakeConnected) return current;
 
   // Crosses are optional: a finished snake determines every remaining empty cell.
-  // Only expose inferred regions when the entire board satisfies the rules.
+  // Once connected, check the spaces even if the player has not crossed them out.
   const completed = analyzeBoard(
     level,
     board.map((cell) => (cell === 'unknown' ? 'empty' : cell)),
   );
-  return completed.solved ? { ...completed, unknown: current.unknown } : current;
+  if (completed.solved) return { ...completed, unknown: current.unknown };
+
+  const sizes = completed.regions.map((region) => region.cells.length).sort((a, b) => a - b);
+  const required =
+    level.top === 0
+      ? 'no empty regions'
+      : `one region of each size: ${Array.from({ length: level.top }, (_, i) => i + 1).join(', ')}`;
+  return {
+    ...completed,
+    unknown: current.unknown,
+    regionMismatch: true,
+    messages: [
+      `The snake is connected, but the empty regions have sizes ${sizes.join(', ') || 'none'}. You need ${required}. Adjust the snake’s path.`,
+    ],
+  };
 }
 
 // Hints use the source puzzle's recorded solve order, correcting mistakes first.

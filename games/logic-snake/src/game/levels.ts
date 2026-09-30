@@ -1,4 +1,5 @@
 import type { Cell, Level } from './engine';
+import { tutorialLevels } from './tutorials';
 
 interface SourceLevel {
   width: number;
@@ -29,7 +30,7 @@ const names = [
   'Full circle',
 ];
 
-export const levels: Level[] = Object.entries(sources)
+export const puzzleLevels: Level[] = Object.entries(sources)
   .sort(([a], [b]) =>
     a.endsWith('/level.json') ? -1 : b.endsWith('/level.json') ? 1 : a.localeCompare(b),
   )
@@ -52,3 +53,9 @@ export const levels: Level[] = Object.entries(sources)
     clues: source.initial_open.map(([x, y]) => y * source.width + x),
     moves: source.moves.map(([x, y]) => y * source.width + x),
   }));
+
+export const levels = [...tutorialLevels, ...puzzleLevels];
+
+export function levelNumber(level: Level) {
+  return String(levels.indexOf(level) + 1).padStart(2, '0');
+}

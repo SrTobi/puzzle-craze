@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { CSSProperties, KeyboardEvent } from 'react';
-import { LockKeyhole } from 'lucide-react';
+import { ArrowDown, LockKeyhole } from 'lucide-react';
 import { isSnake, neighbors, type Cell, type Level, type Region } from '../game/engine';
 
 export function Board({
@@ -9,6 +9,7 @@ export function Board({
   errors,
   regions,
   hint,
+  tutorialTarget = null,
   onMark,
 }: {
   level: Level;
@@ -16,6 +17,7 @@ export function Board({
   errors: Set<number>;
   regions: Region[];
   hint: number | null;
+  tutorialTarget?: number | null;
   onMark: (index: number, alternate?: boolean) => void;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -42,7 +44,12 @@ export function Board({
       className="snake-board"
       role="group"
       aria-label={`${level.width} by ${level.height} puzzle board`}
-      style={{ '--columns': level.width } as CSSProperties}
+      style={
+        {
+          '--columns': level.width,
+          '--tutorial-board-width': `${level.width * 88 + 20}px`,
+        } as CSSProperties
+      }
     >
       {board.map((cell, i) => {
         const locked = level.clues.includes(i);
@@ -57,9 +64,10 @@ export function Board({
             ref={(node) => {
               refs.current[i] = node;
             }}
-            className={`snake-cell cell-${cell}${locked ? ' is-clue' : ''}${invalid ? ' is-invalid' : ''}${hint === i ? ' is-hint' : ''}${region?.closed ? ' is-enclosed' : ''}`}
+            className={`snake-cell cell-${cell}${locked ? ' is-clue' : ''}${invalid ? ' is-invalid' : ''}${hint === i ? ' is-hint' : ''}${region?.closed ? ' is-enclosed' : ''}${tutorialTarget === i ? ' tutorial-target' : ''}`}
             aria-label={`Row ${Math.floor(i / level.width) + 1}, column ${(i % level.width) + 1}: ${description}${locked ? ', fixed clue' : ''}${invalid ? ', conflict' : ''}`}
             aria-disabled={locked}
+            aria-describedby={tutorialTarget === i ? 'snake-tutorial-instruction' : undefined}
             onClick={(event) => onMark(i, event.shiftKey)}
             onContextMenu={(event) => {
               event.preventDefault();
@@ -67,6 +75,14 @@ export function Board({
             }}
             onKeyDown={(event) => navigate(event, i)}
           >
+            {tutorialTarget === i && (
+              <ArrowDown
+                className="snake-tutorial-pointer"
+                size={30}
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            )}
             {snake && (
               <svg viewBox="0 0 100 100" aria-hidden="true" className="snake-piece">
                 {adjacent.map((n) => (
