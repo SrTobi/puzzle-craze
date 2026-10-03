@@ -4,4 +4,5 @@ export const links = {
   arrowSurgery: `${import.meta.env.BASE_URL}games/arrow-surgery/`,
   logicSnake: `${import.meta.env.BASE_URL}games/logic-snake/`,
   waterSort: `${import.meta.env.BASE_URL}games/water-sort/`,
+  sudoku: `${import.meta.env.BASE_URL}games/sudoku/`,
 };

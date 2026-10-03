@@ -44,7 +44,7 @@
 }
 .game-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 26px;
 }
 .game-card {
@@ -80,6 +80,14 @@
 .water-art {
   background-color: #e8f0ec;
   background-image: radial-gradient(#c4d7cd 1px, transparent 1px);
+}
+.sudoku-art {
+  background-color: #f0eedf;
+  background-image: radial-gradient(#d5d5bd 1px, transparent 1px);
+}
+.sudoku-art .art-caption,
+.sudoku-card .card-action {
+  color: #798763;
 }
 .water-art .art-caption,
 .water-card .card-action {

@@ -10,6 +10,7 @@ A collection of browser games built with React, TypeScript, and Vite. The landin
 | Arrow Surgery | `/games/arrow-surgery/` | `games/arrow-surgery/` |
 | Logic Snake   | `/games/logic-snake/`   | `games/logic-snake/`   |
 | Water Sort    | `/games/water-sort/`    | `games/water-sort/`    |
+| Sudoku        | `/games/sudoku/`        | `games/sudoku/`        |
 
 ## Development
 
@@ -23,7 +24,7 @@ Open the address printed by Vite (normally http://127.0.0.1:5173). All commands 
 
 ```sh
 pnpm test          # Tests across all games
-pnpm build         # TypeScript checks and all four pages in dist/
+pnpm build         # TypeScript checks and all five pages in dist/
 pnpm preview       # Serve the production site locally
 pnpm format:check  # Check formatting
 ```
@@ -37,6 +38,7 @@ games/
   arrow-surgery/           Existing game, tests, levels, worker, and design docs
   logic-snake/             Snake deduction puzzles, rules, saved progress, and tests
   water-sort/              Liquid sorting puzzles, solver, saved progress, and tests
+  sudoku/                  Sudoku variants, guided levels, custom generator, and tests
 shared/
   components/             Reusable site UI
   styles/                 Fonts, base styles, and site layout
@@ -47,7 +49,7 @@ public/                    Site-wide static assets
 
 The root package, lockfile, TypeScript, Vite, formatting, and Nix configuration are shared infrastructure. Keep game-specific logic, styles, assets, and tests inside its game folder. Put code in `shared/` when it is useful across pages; shared code should not import a game's internals. Game styles load only on that game's page. Fonts are bundled locally.
 
-See [Arrow Surgery's guide](games/arrow-surgery/README.md) for gameplay, level formats, and generation details, [Logic Snake's guide](games/logic-snake/README.md) for its rules and controls, and [Water Sort's guide](games/water-sort/README.md) for pouring rules and controls.
+See [Arrow Surgery's guide](games/arrow-surgery/README.md) for gameplay, level formats, and generation details, [Logic Snake's guide](games/logic-snake/README.md) for its rules and controls, [Water Sort's guide](games/water-sort/README.md) for pouring rules and controls, and [Sudoku's guide](games/sudoku/README.md) for variants, progression, and custom generation.
 
 ## Building and hosting
 
@@ -58,6 +60,7 @@ dist/index.html
 dist/games/arrow-surgery/index.html
 dist/games/logic-snake/index.html
 dist/games/water-sort/index.html
+dist/games/sudoku/index.html
 dist/assets/               Shared and page-specific bundles
 ```
 
