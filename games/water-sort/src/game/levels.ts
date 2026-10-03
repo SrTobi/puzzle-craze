@@ -1,25 +1,29 @@
-import { CAPACITY, type Board } from './engine';
+import type { Board } from './engine';
+import { seededBoard } from './seededBoard';
+import catalog from './catalog.json';
+import type { Difficulty } from './difficulty';
 
 export type Level = {
   id: string;
   number: number;
+  seed: number | null;
+  difficulty?: Difficulty;
   name: string;
   colors: number;
   board: Board;
   tutorial?: string;
 };
 export const TUTORIAL_COUNT = 3;
+export const TOTAL_LEVELS = 1000;
+export const CATALOG_VERSION = catalog.version;
 export const isLevelNumber = (value: unknown): value is number =>
-  Number.isSafeInteger(value) && Number(value) > 0;
+  Number.isSafeInteger(value) && Number(value) > 0 && Number(value) <= TOTAL_LEVELS;
+export function catalogEntry(number: number) {
+  if (!isLevelNumber(number)) throw new Error(`Choose a level from 1 to ${TOTAL_LEVELS}.`);
+  return number <= TUTORIAL_COUNT ? undefined : catalog.entries[number - TUTORIAL_COUNT - 1];
+}
 export function colorCount(number: number): number {
-  if (!isLevelNumber(number)) throw new Error('Enter a positive whole level number.');
-  return number <= 10
-    ? 3
-    : number <= 40
-      ? 4
-      : number <= 70
-        ? 5
-        : 6 + Math.floor((number - 71) / 50);
+  return catalogEntry(number)?.colors ?? 3;
 }
 
 const tutorials: { name: string; tutorial: string; board: Board }[] = [
@@ -55,8 +59,8 @@ const tutorials: { name: string; tutorial: string; board: Board }[] = [
   },
 ];
 
-// Hash the full decimal level number, then use a fixed integer PRNG and Fisher–Yates.
-// Generation has no dependency on dates, Math.random(), or earlier levels.
+// Display order and generation seed are independent. Catalog entries reproduce
+// the exact analyzed board, including its proven empty-bottle count.
 export function initialLevel(number: number): Level {
   const colors = colorCount(number);
   const tutorial = tutorials[number - 1];
@@ -64,33 +68,20 @@ export function initialLevel(number: number): Level {
     return {
       id: String(number),
       number,
+      seed: null,
       colors,
       ...tutorial,
       board: [...tutorial.board.map((tube) => [...tube]), []],
     };
-  let state = 2166136261;
-  for (const digit of String(number))
-    state = Math.imul(state ^ digit.charCodeAt(0), 16777619) >>> 0;
-  const random = () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-  const liquid = Array.from({ length: colors * CAPACITY }, (_, i) => Math.floor(i / CAPACITY));
-  for (let i = liquid.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [liquid[i], liquid[j]] = [liquid[j], liquid[i]];
-  }
-  const board = Array.from({ length: colors }, (_, i) =>
-    liquid.slice(i * CAPACITY, (i + 1) * CAPACITY),
-  );
+  const entry = catalogEntry(number)!;
+  const board = seededBoard(entry.seed, colors, entry.emptyTubes);
   return {
     id: String(number),
     number,
+    seed: entry.seed,
+    difficulty: entry,
     colors,
     name: `Experiment ${number}`,
-    board: [...board, []],
+    board,
   };
 }

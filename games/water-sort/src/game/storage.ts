@@ -1,8 +1,8 @@
 import { CAPACITY, type Board } from './engine';
-import { colorCount, isLevelNumber, type Level } from './levels';
+import { CATALOG_VERSION, colorCount, isLevelNumber, type Level } from './levels';
 
-// The old fixed collection has different layouts; leave its v1 save untouched.
-export const STORAGE_KEY = 'puzzle-craze.water-sort.v2';
+// Ranked levels have new identities; leave earlier collections and their saves untouched.
+export const STORAGE_KEY = `puzzle-craze.water-sort.ranked-v${CATALOG_VERSION}`;
 export type Run = { board: Board; history: Board[]; moves: number };
 export type Progress = { selected: string; completed: string[]; runs: Record<string, Run> };
 export const freshRun = (level: Level): Run => ({

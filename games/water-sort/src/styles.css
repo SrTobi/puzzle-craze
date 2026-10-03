@@ -202,8 +202,10 @@
   overflow: visible;
   flex-shrink: 0;
 }
-.water-tube:not([aria-disabled='true']):not(.is-receiving):hover .water-glass {
-  transform: translateY(-5px);
+@media (hover: hover) and (pointer: fine) {
+  .water-tube:not([aria-disabled='true']):not(.is-receiving):not(.is-selected):hover .water-glass {
+    transform: translateY(-5px);
+  }
 }
 .water-tube.is-selected .water-glass {
   transform: translateY(-15px);
