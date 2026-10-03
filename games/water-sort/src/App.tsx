@@ -16,8 +16,16 @@ import { links } from '../../../shared/links';
 import { Dialog } from './Dialog';
 import { liquidColor, Tube } from './Tube';
 import { isSolved, isSorted, legalMoves, pourAmount, type Move } from './game/engine';
-import { colorCount, initialLevel, isLevelNumber, type Level } from './game/levels';
+import {
+  catalogEntry,
+  colorCount,
+  initialLevel,
+  isLevelNumber,
+  TOTAL_LEVELS,
+  type Level,
+} from './game/levels';
 import { configurationKey } from './game/analysis';
+import { COLOR_STAGES } from './game/colorStages';
 import { useLevelAnalysis } from './useLevelAnalysis';
 import { AnalysisPanel } from './AnalysisPanel';
 import { freshRun, loadProgress, STORAGE_KEY, validBoard, type Run } from './game/storage';
@@ -57,10 +65,7 @@ export default function App() {
   const loading = !analysis.ready;
   const placeholder = useMemo<Level>(
     () => ({
-      id: String(levelNumber),
-      number: levelNumber,
-      colors: colorCount(levelNumber),
-      name: levelNumber <= 3 ? initialLevel(levelNumber).name : `Experiment ${levelNumber}`,
+      ...initialLevel(levelNumber),
       board: [],
     }),
     [levelNumber],
@@ -304,6 +309,7 @@ export default function App() {
               disabled={pouring}
               onClick={() => {
                 setJump(progress.selected);
+                setPickerStart(4 + Math.floor(Math.max(0, level.number - 4) / 20) * 20);
                 setDialog('levels');
               }}
             >
@@ -317,7 +323,7 @@ export default function App() {
             <p>
               {level.number <= 3
                 ? 'Your first steps in the color lab.'
-                : `Seed ${level.number} · ${level.colors} colors · A new experiment every level.`}
+                : `Seed ${level.seed} · ${level.colors} colors · ${level.number < 10 ? 'Find your flow.' : 'Every choice counts.'}`}
             </p>
           </div>
           <div className="water-progress">
@@ -365,7 +371,7 @@ export default function App() {
                     <p>
                       {analysis.progress
                         ? `${analysis.progress.discovered.toLocaleString()} configurations found · ${analysis.progress.explored.toLocaleString()} processed`
-                        : 'Shuffling the seeded layout and adding one empty bottle.'}
+                        : 'Restoring this puzzle and checking every route.'}
                     </p>
                     {analysis.progress && (
                       <p>
@@ -484,7 +490,7 @@ export default function App() {
                     Hint<kbd>H</kbd>
                   </button>
                 </div>
-                {solved && (
+                {solved && level.number < TOTAL_LEVELS && (
                   <button
                     className="water-next"
                     onClick={() => selectLevel(String(level.number + 1))}
@@ -493,6 +499,11 @@ export default function App() {
                   </button>
                 )}
               </>
+            )}
+            {solved && level.number === TOTAL_LEVELS && (
+              <p className="water-feedback is-complete">
+                Final experiment solved. Explore the collection or replay your favorites.
+              </p>
             )}
             <p className="water-board-foot">
               No timer. No rush. Just one thoughtful pour at a time.
@@ -532,18 +543,19 @@ export default function App() {
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (!isLevelNumber(Number(jump))) {
-                    setJumpError('Enter a positive whole level number.');
+                    setJumpError(`Choose a level from 1 to ${TOTAL_LEVELS}.`);
                     return;
                   }
                   selectLevel(jump);
                 }}
               >
-                <label htmlFor="water-level-number">Go to any level</label>
+                <label htmlFor="water-level-number">Go to a level (1–1,000)</label>
                 <div>
                   <input
                     id="water-level-number"
                     type="number"
                     min="1"
+                    max={TOTAL_LEVELS}
                     step="1"
                     value={jump}
                     onChange={(event) => setJump(event.target.value)}
@@ -555,36 +567,46 @@ export default function App() {
                 {jumpError && <p role="alert">{jumpError}</p>}
               </form>
               <p className="water-analysis-caption">
-                1–10: 3 colors · 11–40: 4 · 41–70: 5.
+                1–3: guided tutorials · 4–9: easy warm-ups.
                 <br />
-                From 71 onward, a new color every 50 levels.
+                New colors arrive gradually:
+                <br />
+                {COLOR_STAGES.map(
+                  ({ first, last, colors }) => `${first}–${last}: ${colors.join(' or ')} colors`,
+                ).join(' · ')}
               </p>
               <div className="water-level-list">
-                {[1, 2, 3, ...Array.from({ length: 20 }, (_, i) => pickerStart + i)].map(
-                  (number) => (
-                    <button
-                      key={number}
-                      aria-current={number === level.number ? 'true' : undefined}
-                      onClick={() => selectLevel(String(number))}
-                    >
-                      <span>{String(number).padStart(2, '0')}</span>
-                      <span>
-                        <strong>
-                          {number <= 3 ? initialLevel(number).name : `Experiment ${number}`}
-                        </strong>
-                        <small>
-                          {number <= 3 ? 'Tutorial' : `Seed ${number}`} · {colorCount(number)}{' '}
-                          colors
-                        </small>
-                      </span>
-                      {progress.completed.includes(String(number)) ? (
-                        <CheckCheck size={19} aria-label="Completed" />
-                      ) : (
-                        <ArrowRight size={17} />
-                      )}
-                    </button>
+                {[
+                  1,
+                  2,
+                  3,
+                  ...Array.from(
+                    { length: Math.min(20, TOTAL_LEVELS - pickerStart + 1) },
+                    (_, i) => pickerStart + i,
                   ),
-                )}
+                ].map((number) => (
+                  <button
+                    key={number}
+                    aria-current={number === level.number ? 'true' : undefined}
+                    onClick={() => selectLevel(String(number))}
+                  >
+                    <span>{String(number).padStart(2, '0')}</span>
+                    <span>
+                      <strong>
+                        {number <= 3 ? initialLevel(number).name : `Experiment ${number}`}
+                      </strong>
+                      <small>
+                        {number <= 3 ? 'Tutorial' : `Seed ${catalogEntry(number)?.seed}`} ·{' '}
+                        {colorCount(number)} colors
+                      </small>
+                    </span>
+                    {progress.completed.includes(String(number)) ? (
+                      <CheckCheck size={19} aria-label="Completed" />
+                    ) : (
+                      <ArrowRight size={17} />
+                    )}
+                  </button>
+                ))}
               </div>
               <div className="water-page-controls">
                 <button
@@ -593,7 +615,10 @@ export default function App() {
                 >
                   Previous levels
                 </button>
-                <button onClick={() => setPickerStart(pickerStart + 20)}>
+                <button
+                  disabled={pickerStart + 20 > TOTAL_LEVELS}
+                  onClick={() => setPickerStart(pickerStart + 20)}
+                >
                   More levels <ArrowRight size={16} />
                 </button>
               </div>
@@ -615,9 +640,12 @@ export default function App() {
                 pour into the same destination together, one from each side.
               </p>
               <p>
-                Levels 1–3 are tutorials. After that, the level number seeds the layout. We explore
-                every reachable configuration, treating bottle positions as interchangeable. If
-                there is no winning route, we add an empty bottle and analyze again.
+                The first 20 levels use three colors. Then 30 levels mix three and four colors,
+                followed by ten levels with four colors. Repeat that pattern with four/five,
+                five/six, and six/seven colors; from level 171, stay at seven. Within each range,
+                puzzles run from higher to lower average winning-to-losing choice ratios: higher is
+                easier. Every challenge from level 10 has traps and needs at least ten pours to
+                solve. The collection contains 1,000 levels, each with a saved seed and color count.
               </p>
               <p>
                 The sidebar shows exact shortest distances and which configurations cannot win. Hint

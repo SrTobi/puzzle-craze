@@ -47,4 +47,13 @@ describe('saved progress', () => {
     const data = { runs: { [level.id]: { ...freshRun(level), moves: 1, history: ['bad'] } } };
     expect(decodeProgress(JSON.stringify(data)).runs[level.id].history).toEqual([]);
   });
+  it('rejects level numbers outside the ranked collection', () => {
+    expect(
+      decodeProgress(JSON.stringify({ selected: '1001', completed: ['0', '1000', '1001'] })),
+    ).toEqual({
+      selected: '1',
+      completed: ['1000'],
+      runs: {},
+    });
+  });
 });

@@ -165,7 +165,8 @@ export function* generateLevel(number: number): Generator<GenerationProgress, Ge
       winnable: graph.summary.startDistance !== null,
     });
     if (graph.summary.startDistance !== null) return { level, graph, attempts };
-    // Keep exactly the same random arrangement; only add one empty bottle.
+    if (!level.tutorial) throw new Error('This catalog puzzle failed its solvability check.');
+    // Tutorials keep the teaching arrangement and add room only if needed.
     level = { ...level, board: [...level.board, []] };
   }
 }

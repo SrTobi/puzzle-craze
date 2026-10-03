@@ -117,8 +117,8 @@ export default function App() {
                   Water Sort <MoveUpRight size={25} />
                 </h3>
                 <p>
-                  Pour a little order into the color lab. Learn the basics, then explore endless
-                  seeded experiments, one thoughtful pour at a time.
+                  Pour a little order into the color lab. Learn the basics, then take on 1,000
+                  experiments with increasingly tricky choices.
                 </p>
                 <span className="card-action">
                   Play Water Sort <ArrowRight size={17} />

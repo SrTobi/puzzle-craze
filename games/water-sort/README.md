@@ -1,44 +1,68 @@
 # Water Sort
 
-An endless sequence of laboratory puzzles. Levels 1–3 are guided tutorials. From level 4 onward, the level number is the seed; a level's layout never depends on earlier play or on the current time.
+A fixed collection of **1,000 puzzles**, generated and ranked before release. Each generated entry stores its seed, color count, proven empty-bottle count, and difficulty statistics. Boards are reproduced with the fixed PRNG; the displayed level number is independent of the seed.
 
-## Progression
+## Progression and difficulty
 
-| Levels                     | Colors               |
-| -------------------------- | -------------------- |
-| 1–10 (including tutorials) | 3                    |
-| 11–40                      | 4                    |
-| 41–70                      | 5                    |
-| 71–120                     | 6                    |
-| 121–170                    | 7                    |
-| Each subsequent 50 levels  | One additional color |
+- **1–3:** guided tutorials, unchanged.
+- **4–9:** easy warm-ups with five to nine moves in their shortest solution and no losing states.
+- **10–1,000:** every challenge has reachable losing states, needs at least ten pours, has at least three winnable configurations with a losing choice, and has at least 3% losing configurations overall. Its average winning-to-losing ratio is at most 4:1.
 
-The picker accepts any positive safe integer level number, and Next experiment advances without a fixed catalog limit. Additional colors are generated beyond the original palette. The liquids contain no symbols; tube labels name the colors for screen readers.
+| Levels    | Colors |
+| --------- | ------ |
+| 1–20      | 3      |
+| 21–50     | 3 or 4 |
+| 51–60     | 4      |
+| 61–90     | 4 or 5 |
+| 91–100    | 5      |
+| 101–130   | 5 or 6 |
+| 131–140   | 6      |
+| 141–170   | 6 or 7 |
+| 171–1,000 | 7      |
 
-## Generation and exact analysis
+After the first 20 levels, each new color is introduced with 30 mixed levels followed by ten using only that color. Mixed ranges contain 15 puzzles of each permitted color count, ranked together by difficulty. The existing maximum of seven colors is retained; after its introduction, the remaining levels use seven colors.
 
-1. Seed the fixed PRNG with the full decimal level number. Shuffle four units per color with Fisher–Yates and divide them into full bottles. Tutorials use fixed teaching arrangements.
-2. Add one empty bottle. Enumerate **all** legally reachable configurations, including loops, using immutable pouring rules.
-3. Canonicalize each configuration by sorting its bottle encodings. Bottle positions are interchangeable; layer order, color identities, and the number of empty bottles are preserved.
-4. Retain each distinct directed transition, with a multiplicity for the number of physical source/destination choices that produce it. Do not prune solved bottles, uniform-to-empty pours, or self-loops.
-5. Run reverse breadth-first search from the unique normalized winning configuration. This gives the shortest distance for every winnable configuration. All remaining configurations are marked unwinnable, including cycles that cannot reach the goal.
-6. If the starting graph contains no goal, keep the same shuffled liquid arrangement, add one empty bottle, and repeat the complete analysis.
-7. For every winnable configuration, count legal pours whose destination has a smaller shortest distance. Average these counts equally over all winnable configurations, including the goal with zero improving moves. The sidebar also gives the average number of distinct improving outcomes, to distinguish equivalent physical moves from graph edges.
+For every **unsolved, winnable configuration with at least one losing choice**, divide the number of legal pours that retain a route to victory by the number that lead to an unwinnable state. Average these ratios equally across those configurations. **Higher ratios are easier.** This is the mean of individual ratios, not the ratio of summed move counts. Winning choices include neutral or farther-away moves that still leave a solution, not only moves on a shortest route. Physical bottle choices retain their multiplicity.
 
-The sidebar shows starting and current shortest distances, improving/losing/neutral/worsening move counts, configuration totals, unwinnable counts, transition counts, self-loops, dead ends, distance averages, and analysis time. The configuration explorer pages through every state with a distance or an unwinnable label, its improving-move count, and expandable bottle contents. Hints use exact shortest paths from the current position.
+Configurations with zero losing choices are excluded from the ratio to avoid dividing by zero. Puzzles with no losing choices anywhere store `null` for the ratio and display “Only winning choices”; these are permitted only in the opening. Losing and solved configurations are also excluded from the ratio. Average winning and losing move counts in the sidebar still cover all unsolved, winnable configurations.
 
-## Resource limits
+Within each fixed or mixed range, sort by **descending** ratio, then ascending shortest solution length and average losing-move count, with seed as a deterministic tie-breaker. Each range begins a fresh easy-to-hard stage. Within a mixed range, neighboring levels can move between its two allowed color counts. This metric is a ranking aid, not a measured probability that a player will lose.
 
-Enumeration and analysis run in a dedicated Web Worker. Large graphs can grow exponentially; an unlimited level sequence cannot guarantee bounded computation or memory per level. Progress is visible and the user can pause or select another level to cancel the worker. At 100,000 discovered states, exploration pauses with a **Continue analysis** control that increases its state budget. The complete graph stays in the worker; only statistics and requested pages are sent to the UI. No partial graph is presented as an exact analysis, no incomplete search is labeled unwinnable, and no empty bottle is added because a resource budget was reached. Completed graphs have no approximation or depth cutoff.
+The sidebar shows the ratio and average winning/losing moves alongside exact shortest distances, current improving/losing/neutral/worsening choices, normalized state counts, unwinnable states, transitions, self-loops, dead ends, and distance averages. Every state can still be inspected in the configuration explorer.
+
+## Rebuilding the catalog
+
+```sh
+pnpm generate:water-sort
+```
+
+The offline builder scans consecutive positive seeds independently for each color count. It gathers twice the total number of qualifying challenges needed for that color across all ranges (at least 100 candidates). It rejects duplicate normalized starting boards. For each range, it takes evenly spaced entries from the unused candidates for each allowed color count, then sorts their combined selection by difficulty. A starting configuration is never reused between ranges. Three tutorials, six warm-ups, and 991 challenges make exactly 1,000 levels.
+
+The output is `src/game/catalog.json`, replaced atomically only after every pool has enough candidates. `--pilot` samples 100 seeds per color without replacing the catalog. The generator uses a 20,000-seed maximum per color and fails explicitly if it cannot fill the collection.
+
+For each candidate:
+
+1. Shuffle four units per color using the stable seed and Fisher–Yates algorithm; distribute them into full bottles and add one empty bottle.
+2. Enumerate **all** legally reachable configurations, including loops. Normalize bottle order, preserving layer order, color identities, and empty-bottle count.
+3. Record each directed transition and its multiplicity of physical source/destination choices.
+4. Run reverse breadth-first search from the normalized goal. All states not reached by this reverse search are unwinnable, including losing cycles.
+5. If the completed graph has no goal, retain the arrangement, add one empty bottle, and repeat.
+6. Discard candidates exceeding 20,000 discovered states. An incomplete graph is never treated as unwinnable, never scored, and never triggers adding a bottle.
+7. Measure difficulty only on the complete solvable graph and apply the challenge filters.
+
+At play time, the saved seed, colors, and empty-bottle count reproduce the selected puzzle. The exact graph is rebuilt in a dedicated worker for hints, live statistics, and exploration. A catalog puzzle that fails its solvability check reports an error instead of silently changing its layout. Tutorial layouts may still add an empty bottle as needed.
 
 ## Play and persistence
 
 - Select a tube, then an empty destination or one with a matching top color. Each tube holds four layers; matching top layers pour together up to the available space.
-- Pours can overlap. Two sources may pour into the same destination from opposite sides. Liquid and capacity are reserved immediately; moving or receiving tubes must settle before they can be lifted. Each pour gets its own undo entry.
-- Select the same tube or press Escape to cancel. Undo with `U`, or get a hint with `H`. Restart resets the same seeded layout.
-- Use Tab and Enter/Space for keyboard play. Reduced-motion settings skip the animations.
-- Local storage saves selected level, boards, completion, and the last 100 undo steps per level. Version 2 uses a separate storage key and leaves the old fixed collection's save untouched. Saved boards are validated against the generated level and graph. A storage failure keeps play available and displays a notice.
+- Pours can overlap. Two sources can pour into a shared destination from opposite sides. The animated liquid drains and fills together, while logical capacity is reserved immediately. Moving and receiving tubes must settle before being picked up.
+- Tap the selected tube again or press Escape to cancel. Undo with `U`, or get an exact shortest-path hint with `H`. Restart restores the same puzzle.
+- Tab between tubes and use Enter or Space to select and pour. Reduced motion skips animations. Liquids contain no symbols; screen-reader labels name their colors.
+- The picker accepts levels 1–1,000 and stops at the final page. The last level shows a completion message rather than a link to a nonexistent next level.
+- Ranked progress uses the separate `puzzle-craze.water-sort.ranked-v3` storage key. Previous collections' saves are retained untouched because level numbers now refer to different puzzles. Selected level, completions, boards, and the last 100 undo steps are saved locally and validated on load.
 
-`src/game/analysis.ts` owns graph enumeration, reverse distances, statistics, and generation. `analysis.worker.ts` keeps that work off the UI thread. `engine.ts` owns pouring rules, and `pours.ts` reserves overlapping moves. Tests cross-check shortest paths against an independent forward BFS, check normalized loops and losing states, verify the color thresholds and deterministic generation, and cover empty-bottle retries, persistence, and simultaneous pours.
+## Validation
 
-Run `pnpm test`, `pnpm build`, and `pnpm format:check` at the repository root. The page is `/games/water-sort/`; navigation and the worker follow Vite's base path.
+Run `pnpm test`, `pnpm build`, and `pnpm format:check` from the repository root. Tests independently check shortest paths, normalized loops, losing cycles, move multiplicities, simultaneous pours, and animation conservation. Catalog tests rebuild every selected graph to verify its stored statistics, filters, ratio ordering within stages, color boundaries, deterministic reconstruction, unique normalized layout, and color conservation.
+
+The page is `/games/water-sort/`; links and workers follow Vite's base path.

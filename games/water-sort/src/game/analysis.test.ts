@@ -7,7 +7,7 @@ import {
   graphPage,
   type Graph,
 } from './analysis';
-import { colorCount, initialLevel } from './levels';
+import { initialLevel } from './levels';
 import { isSolved, legalMoves, pour, type Board } from './engine';
 
 function finish<T>(generator: Generator<unknown, T>): T {
@@ -104,37 +104,8 @@ describe('normalization and exact analysis', () => {
   });
 });
 
-describe('endless levels', () => {
-  it.each([
-    [1, 3],
-    [10, 3],
-    [11, 4],
-    [40, 4],
-    [41, 5],
-    [70, 5],
-    [71, 6],
-    [120, 6],
-    [121, 7],
-    [170, 7],
-    [171, 8],
-    [220, 8],
-    [221, 9],
-    [1001, 24],
-  ])('level %i uses %i colors', (number, colors) => {
-    expect(colorCount(number)).toBe(colors);
-  });
-  it('uses the full level number as a repeatable seed and starts with one empty', () => {
-    expect(initialLevel(41)).toEqual(initialLevel(41));
-    expect(initialLevel(41).board).not.toEqual(initialLevel(42).board);
-    const level = initialLevel(171);
-    expect(level.board).toHaveLength(9);
-    expect(level.board.filter((t) => !t.length)).toHaveLength(1);
-    for (let color = 0; color < level.colors; color++)
-      expect(level.board.flat().filter((c) => c === color)).toHaveLength(4);
-    expect(initialLevel(4).tutorial).toBeUndefined();
-    expect(initialLevel(3).tutorial).toBeTruthy();
-  });
-  it.each([1, 2, 3, 4, 10, 11, 40, 41, 71, 121, 171, 221])(
+describe('catalog level analysis', () => {
+  it.each([1, 2, 3, 4, 9, 10, 100, 500, 1000])(
     'fully analyzes and makes level %i solvable',
     (number) => {
       const generated = finish(generateLevel(number));
@@ -145,6 +116,10 @@ describe('endless levels', () => {
         original.board.slice(0, original.colors),
       );
       for (const attempt of generated.attempts.slice(0, -1)) expect(attempt.winnable).toBe(false);
+      if (number >= 10) {
+        expect(generated.graph.summary.unwinnable).toBeGreaterThan(0);
+        expect(generated.graph.summary.startDistance).toBeGreaterThanOrEqual(10);
+      }
     },
   );
 });

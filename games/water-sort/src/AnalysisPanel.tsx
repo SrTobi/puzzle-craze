@@ -43,9 +43,34 @@ export function AnalysisPanel({
       <p className="water-eyebrow">THE SCIENCE OF THIS MIX</p>
       <h2>Every route, explored.</h2>
       <p className="water-analysis-caption">
-        {level.tutorial ? 'Guided layout' : `Seed ${level.number}`} · {level.colors} colors ·{' '}
+        {level.tutorial ? 'Guided layout' : `Seed ${level.seed}`} · {level.colors} colors ·{' '}
         {level.board.length - level.colors} empty tubes
       </p>
+      {level.difficulty && (
+        <section className="water-position" aria-label="Difficulty rating">
+          <h3>
+            {level.number < 10 ? 'Warm-up' : 'Challenge'} · {level.number} / 1,000
+          </h3>
+          <strong>
+            {level.difficulty.winningLosingRatio === null
+              ? 'Only winning choices'
+              : `${level.difficulty.winningLosingRatio.toFixed(2)} : 1 winning / losing`}
+          </strong>
+          <dl>
+            <dt>Average winning moves</dt>
+            <dd>{level.difficulty.averageWinningMoves.toFixed(2)}</dd>
+            <dt>Average losing moves</dt>
+            <dd>{level.difficulty.averageLosingMoves.toFixed(2)}</dd>
+            <dt>Winnable states with a trap</dt>
+            <dd>{count(level.difficulty.trapStates)}</dd>
+          </dl>
+          <p>
+            Higher ratios are easier. Average winning choices ÷ losing choices at configurations
+            with at least one losing choice. A winning choice keeps a route to the goal open.
+            Configurations with no losing choices are excluded from this ratio.
+          </p>
+        </section>
+      )}
       <section
         className={`water-position ${position?.unwinnable ? 'is-unwinnable' : ''}`}
         aria-label="Current configuration"
@@ -109,9 +134,9 @@ export function AnalysisPanel({
         <dd>{(ready.elapsedMs / 1000).toFixed(2)} s</dd>
       </dl>
       <p className="water-stats-explainer">
-        Averages give equal weight to every winnable configuration, including the goal (zero
-        improving moves). Different bottle choices count separately; equivalent outcomes count once
-        in the graph. One pour is one move, even when pours overlap.
+        Improving-move and distance averages give equal weight to every winnable configuration,
+        including the goal (zero improving moves). Different bottle choices count separately;
+        equivalent outcomes count once in the graph. One pour is one move, even when pours overlap.
       </p>
       {ready.attempts.length > 1 && (
         <details>
