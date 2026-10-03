@@ -1,4 +1,4 @@
-import { ARROW_WIDTH, CELL_SIZE, HEAD_HALF_WIDTH, HEAD_LENGTH } from './arrowGeometry';
+import { ARROW_WIDTH, CELL_SIZE, HEAD_HALF_WIDTH, HEAD_LENGTH, HEAD_OFFSET } from './arrowGeometry';
 import { blocker, direction } from './engine';
 import type { Arrow, Point } from './types';
 
@@ -56,7 +56,7 @@ export function arrowDistance(point: Point, arrow: Arrow): number {
   const head = points.at(-1)!;
   const [dx, dy] = direction(arrow);
   const local: Point = [
-    (point[0] - head[0]) * dx + (point[1] - head[1]) * dy,
+    (point[0] - head[0]) * dx + (point[1] - head[1]) * dy - HEAD_OFFSET,
     -(point[0] - head[0]) * dy + (point[1] - head[1]) * dx,
   ];
   if (
