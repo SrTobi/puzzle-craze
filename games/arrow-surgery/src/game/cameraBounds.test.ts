@@ -5,6 +5,22 @@ import { CELL_SIZE } from './arrowGeometry';
 const grid = { columns: 12, rows: 10 };
 const size = { width: 800, height: 600 };
 
+describe('100% board fit', () => {
+  it.each([
+    { grid: { columns: 32, rows: 20 }, size: { width: 800, height: 600 } },
+    { grid: { columns: 20, rows: 32 }, size: { width: 800, height: 600 } },
+    { grid: { columns: 24, rows: 24 }, size: { width: 320, height: 640 } },
+    { grid: { columns: 1024, rows: 1024 }, size: { width: 1920, height: 1080 } },
+  ])('leaves 15% margins on the limiting axis for $grid in $size', ({ grid, size }) => {
+    const fit = boardFit(grid, size);
+    const horizontalMargin = (size.width - (grid.columns - 1) * CELL_SIZE * fit) / 2;
+    const verticalMargin = (size.height - (grid.rows - 1) * CELL_SIZE * fit) / 2;
+    expect(horizontalMargin / size.width).toBeGreaterThanOrEqual(0.15 - 1e-10);
+    expect(verticalMargin / size.height).toBeGreaterThanOrEqual(0.15 - 1e-10);
+    expect(Math.min(horizontalMargin / size.width, verticalMargin / size.height)).toBeCloseTo(0.15);
+  });
+});
+
 describe('camera return bounds', () => {
   it('allows free panning while the grid is still partially visible', () => {
     const halfWidth = ((grid.columns - 1) * CELL_SIZE * boardFit(grid, size)) / 2;

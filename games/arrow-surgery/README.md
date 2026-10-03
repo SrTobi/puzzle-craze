@@ -25,17 +25,18 @@ Only esbuild's install script is enabled in `pnpm-workspace.yaml`. Sound is gene
 ## Playing
 
 - Click or tap an arrow directly, or up to 1½ grid spaces away. Between neighboring arrows with the same blocked/free status, the closer arrow wins (exact ties are resolved consistently). When one is blocked, the removable arrow is preferred until the click is within 20% of a one-cell gap from the blocked arrow, or within ¾ of a grid space when there is an empty grid point between them. These boundaries are measured from the arrows' grid lines. Distant ambiguous clicks do nothing. Direct hits target the arrow you touch, including blocked arrows. The reach follows the grid as you zoom, and hovering previews the selection. An arrow follows its path and exits in the direction its head points, provided no other arrow occupies that outgoing ray.
-- **New puzzle** creates a fully filled rectangle, heart, cat, butterfly, or an uploaded color or black-and-white image. Set dimensions and a seed, then weave and play. Images are resized without changing their aspect ratio; Color is converted to grayscale. An automatic histogram cutoff separates the main shades and favors a low-density gap; a histogram, manual threshold slider, and inversion let you refine which points to fill. Automatic mode recalculates when the grid size changes; a manual cutoff stays put until you choose auto again. Transparent pixels stay empty. Generation runs in a cancellable worker. The preview reports and colors any small mask repairs before play. Save puzzle exports the level, masks, repairs, seed, settings, and solution as JSON.
+- Start with a guided three-arrow tutorial, then use **Next level** to continue. **Levels** lets you replay or jump to any numbered level; selected and completed levels are saved on this device. Level `n` uses seed `arrow-surgery-level-n`; each dimension is rounded from `10 + n / 2` with seeded variation of up to ±2 cells. Levels 2–4 use Easy, 5–14 Hard, and 15 onward Super hard. Size and piece count increase overall, while individual random boards can vary in difficulty. The list ends at level 2,028 to respect the 1,024-point grid limit. Boards generate on demand in a cancellable worker and start immediately.
+- **Levels → Create a custom puzzle** creates a puzzle from a rectangle, heart, cat, butterfly, or an uploaded color or black-and-white image. Uncovered points remain empty instead of triggering a regular strip pattern. Set dimensions, difficulty, and a seed, then click **Start puzzle**. The level opens as soon as generation finishes. Images are resized without changing their aspect ratio; Color is converted to grayscale. An automatic histogram cutoff separates the main shades and favors a low-density gap; a histogram, manual threshold slider, and inversion let you refine which points to fill. Automatic mode recalculates when the grid size changes; a manual cutoff stays put until you choose auto again. Transparent pixels stay empty. Generation runs in a cancellable worker. The in-game save button exports the level, masks, repairs, seed, settings, and solution as JSON.
 - A blocked arrow unwinds toward the nearest blocker, glows red on contact, and retraces its path. It stays red and queued, then automatically launches as soon as its path opens. Multiple queued arrows can release in a chain. Clearing a blocker during the attempt continues the flight smoothly from its current position. You start with three lives; each newly blocked selection costs one. Repeated taps on an already queued arrow cost nothing. The third mistake ends the game after the impact animation, with retry, new-puzzle, and a discreet continue option that restores three lives while keeping your board and queue. There is no time limit.
 - Drag to pan; scroll or pinch to zoom. Zoom stays anchored under your pointer. If the whole grid leaves the viewport, it springs back into reach when you release the drag or finish zooming. Reduced-motion mode returns it immediately. Use the fit button to recenter.
 - Undo reverses the last click, including its entire automatic chain, or cancels a queued selection. Before you run out of lives, it restores the previous queue alongside its blockers and refunds that move’s life; the latest 128 steps are retained to bound history memory on large boards. Continuing after a loss starts a fresh undo history while preserving the total mistake count. Restart clears the queue and all motion, and restores the level and view. A hint highlights an available arrow and brings it into view.
 - Keyboard: `Tab` to an arrow and `Enter`/`Space` to launch. `H` hint, `U` undo, `R` restart, `M` sound, `F` fullscreen, `0` fit, `+`/`-` zoom. Help, the puzzle maker, and completion dialogs support Escape; the loss dialog requires an explicit choice.
 - Large boards use Canvas. Tab to the board, use the arrow keys to select and center an arrow, and press Enter or Space to launch. SVG remains in use for smaller puzzles. Overview rendering simplifies tiny arrows; zooming restores their heads and details.
-- The board viewport reaches all four screen edges, with controls floating above it. The layout adapts to touch screens and honors reduced-motion preferences. Winning highlights New puzzle above the secondary Play again action.
+- The board viewport reaches all four screen edges, with controls floating above it. The layout adapts to touch screens and honors reduced-motion preferences. Winning highlights Next level above the secondary Play again action. Custom puzzles offer Continue levels.
 
 ## Level format (version 1)
 
-The starting map is `src/levels/first-light.json`. Types are in `src/game/types.ts`; `parseLevel()` validates imported JSON before use.
+The starting tutorial and numbered-level settings are in `src/levels/campaign.ts`. `src/levels/first-light.json` remains an example authored map. Types are in `src/game/types.ts`; `parseLevel()` validates imported JSON before use.
 
 ```json
 {
@@ -70,7 +71,7 @@ The starting map is `src/levels/first-light.json`. Types are in `src/game/types.
 
 Coordinates are integer `[x,y]` pairs with `(0,0)` at the top left; x increases rightward and y downward. Points run **from tail to head**. Each pair of consecutive points describes a nonzero horizontal or vertical segment. Corners are sufficient: intermediate cells along straight segments are inferred. The last segment determines the launch direction.
 
-IDs must be unique. Paths must remain in bounds and may neither overlap another path nor visit a cell twice. Colors: `violet`, `coral`, `teal`, `gold`, `blue`, `pink`. Difficulty: `easy`, `medium`, `hard`. Grid dimensions: 1–1,024 points per axis. An arrow needs at least two adjacent points, so a 1×1 board cannot be generated.
+IDs must be unique. Paths must remain in bounds and may neither overlap another path nor visit a cell twice. Colors: `violet`, `coral`, `teal`, `gold`, `blue`, `pink`. Difficulty: `easy`, `hard`, `super-hard` (legacy `medium` levels are also accepted). Grid dimensions: 1–1,024 points per axis. An arrow needs at least two adjacent points, so a 1×1 board cannot be generated.
 
 The outgoing head ray is checked against every occupied cell of every other active arrow, including segment interiors. Tails follow their existing paths as heads extend, so a clear head ray suffices for escape. Removed arrows cease blocking immediately, allowing quick successive moves. The animation preserves total path length.
 
@@ -78,7 +79,7 @@ The outgoing head ray is checked against every occupied cell of every other acti
 
 ## Level generation
 
-`src/generation/generator.ts` exports `generatePuzzle(input, onProgress?)`. Omit `mask` for a full rectangle, or provide a row-major array of 0/1 values of length `columns * rows`. Every enabled point is covered exactly once. The returned object contains `{ level, generation }`; masks in its metadata are stored as rows of `"0"`/`"1"` characters. The ordinary version-1 level is `result.level`.
+`src/generation/generator.ts` exports `generatePuzzle(input, onProgress?)`. Omit `mask` for a full rectangle, or provide a row-major array of 0/1 values of length `columns * rows`. Generation tries to cover every enabled point. If no attempt achieves full coverage, it keeps the carving that covers the most original points and leaves the rest empty. The returned object contains `{ level, generation }`; masks in its metadata are stored as rows of `"0"`/`"1"` characters. The ordinary version-1 level is `result.level`.
 
 ```ts
 const result = generatePuzzle({
@@ -86,21 +87,23 @@ const result = generatePuzzle({
   rows: 64,
   seed: 'my-cat',
   mask, // optional Uint8Array; 1 = occupied, 0 = empty
-  length: 10, // desired average arrow length in points
-  repair: true, // false requires an exact, unchanged mask
+  difficulty: 'hard', // 'easy', 'hard' (default), or 'super-hard'
+  repair: true, // false prevents shape edits; unfilled points may still remain
 });
 ```
 
-Generation carves escapable arrows out of the full mask, recording a legal removal order. Every result is independently checked for geometry, exact coverage, and solvability. Rectangles have a guaranteed serpentine-band fallback. Irregular masks have bounded attempts and small optional repairs; an unsuccessful search returns an error instead of an incomplete puzzle. See [generation design and limits](docs/level-generation.md) for details and measured scale checks.
+Generation carves escapable arrows out of the full mask, recording a legal removal order. It picks from the eligible heads farthest from the board edge they point toward 50% of the time, and uniformly from all eligible heads the other 50%. All choices and tie-breaking use seeded randomness. Easy, Hard, and Super hard automatically target progressively shorter arrows (18, 10, and 6 points), increasing the number of pieces to untangle. Every result is independently checked for geometry, exact coverage, and solvability, then opens immediately for play. Use the in-game save button to download the level and its generation metadata. Rectangles try up to six carvings; there is no strip fallback. Irregular masks retain bounded attempts and small optional repairs. The best partial carving is playable, provided it contains at least one arrow. Exported `finalMask` describes actual coverage, while `uncovered` lists unfilled points separately from intentional shape repairs. See [generation design and limits](docs/level-generation.md) for details and measured scale checks.
 
 ## Structure
 
 - `src/game/` — pure geometry/rules, validation, tests, and Web Audio sounds
-- `src/levels/` — authored JSON maps
+- `src/levels/` — tutorial, seeded campaign settings, and example JSON maps
 - `src/generation/` — mask conversion, deterministic generation, worker, and scale tests
+- `src/hooks/useCampaign.ts` — numbered-level generation and locally saved progress
+- `src/components/LevelPicker.tsx` — paged level selection and custom-puzzle entry
 - `src/hooks/useCamera.ts` — mouse/touch panning, cursor zoom, pinch zoom
 - `src/components/Board.tsx`, `CanvasBoard.tsx` — SVG and Canvas arrows, picking, and animation
-- `src/components/Generator.tsx` — shape/image controls, progress, repair preview, and export
+- `src/components/Generator.tsx` — shape/image controls, progress, shape preview, and export
 - `src/App.tsx` — game state, feedback, controls, help, completion
 
 Inspired by the arrow escape mechanic at https://arrowout.github.io/. All game code and visuals here are original.

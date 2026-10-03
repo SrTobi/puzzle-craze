@@ -25,7 +25,7 @@ export default function App() {
         <section className="game-collection" id="games" aria-labelledby="games-title">
           <div className="collection-heading">
             <h2 id="games-title">Find your next little obsession</h2>
-            <span>THE COLLECTION / 01–02</span>
+            <span>THE COLLECTION / 01–03</span>
           </div>
           <div className="game-cards">
             <a className="game-card arrow-card" href={links.arrowSurgery}>
@@ -82,6 +82,46 @@ export default function App() {
                 </p>
                 <span className="card-action">
                   Play Logic Snake <ArrowRight size={17} />
+                </span>
+              </div>
+            </a>
+            <a className="game-card water-card" href={links.waterSort}>
+              <div className="game-art water-art" aria-hidden="true">
+                <span className="game-status">Ready to play</span>
+                <svg viewBox="0 0 440 220" fill="none">
+                  <defs>
+                    <clipPath id="home-water-tubes">
+                      {[105, 185, 265].map((x) => (
+                        <rect key={x} x={x} y="50" width="46" height="136" rx="20" />
+                      ))}
+                    </clipPath>
+                  </defs>
+                  <g clipPath="url(#home-water-tubes)">
+                    <path d="M105 162h46M185 94h46M265 128h46" stroke="#dc826b" strokeWidth="34" />
+                    <path d="M105 128h46M185 162h46M265 94h46" stroke="#9981c8" strokeWidth="34" />
+                    <path d="M105 94h46M185 128h46M265 162h46" stroke="#66a994" strokeWidth="34" />
+                  </g>
+                  {[105, 185, 265].map((x) => (
+                    <g key={x} stroke="#8fa6a0" strokeWidth="2.5">
+                      <path d={`M${x - 4} 42v122a27 27 0 0 0 54 0V42`} />
+                      <rect x={x - 7} y="35" width="60" height="8" rx="4" fill="#f7faf4" />
+                      <path d={`M${x + 5} 57v92`} stroke="white" opacity=".5" />
+                    </g>
+                  ))}
+                </svg>
+                <span className="art-caption">A LITTLE COLOR. A LITTLE CLARITY.</span>
+              </div>
+              <div className="card-copy">
+                <p className="site-kicker">03 / Find your flow</p>
+                <h3>
+                  Water Sort <MoveUpRight size={25} />
+                </h3>
+                <p>
+                  Pour a little order into the color lab. Learn the basics, then take on 1,000
+                  experiments with increasingly tricky choices.
+                </p>
+                <span className="card-action">
+                  Play Water Sort <ArrowRight size={17} />
                 </span>
               </div>
             </a>

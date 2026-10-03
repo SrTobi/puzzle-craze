@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { arrowDistance, pickArrow } from './hitTesting';
-import { ARROW_WIDTH, CELL_SIZE } from './arrowGeometry';
+import { ARROW_WIDTH, CELL_SIZE, HEAD_OFFSET } from './arrowGeometry';
 import type { Arrow, Point } from './types';
 
 const upper: Arrow = {
@@ -205,7 +205,7 @@ describe('forgiving arrow selection', () => {
   });
 
   it('includes the arrowhead wings in distance checks', () => {
-    expect(arrowDistance([3 * CELL_SIZE - 12, 8], upper)).toBe(0);
+    expect(arrowDistance([3 * CELL_SIZE + HEAD_OFFSET - 12, 8], upper)).toBe(0);
   });
 
   it('leaves empty space and cleared arrows unselected', () => {

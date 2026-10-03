@@ -10,6 +10,7 @@ export default defineConfig({
         home: fileURLToPath(new URL('./index.html', import.meta.url)),
         arrowSurgery: fileURLToPath(new URL('./games/arrow-surgery/index.html', import.meta.url)),
         logicSnake: fileURLToPath(new URL('./games/logic-snake/index.html', import.meta.url)),
+        waterSort: fileURLToPath(new URL('./games/water-sort/index.html', import.meta.url)),
       },
     },
   },

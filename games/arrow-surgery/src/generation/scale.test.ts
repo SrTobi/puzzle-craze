@@ -2,10 +2,12 @@ import { expect, it } from 'vitest';
 import { generatePuzzle } from './generator';
 import { shapeMask } from './masks';
 
-it('fully covers a million-point board within a bounded generation pass', () => {
+it('keeps a solvable partial carving on a million-point board within a bounded generation pass', () => {
   const start = performance.now();
-  const result = generatePuzzle({ columns: 1024, rows: 1024, seed: 'million', length: 16 });
-  expect(result.generation.stats.cells).toBe(1048576);
+  const result = generatePuzzle({ columns: 1024, rows: 1024, seed: 'million', difficulty: 'easy' });
+  expect(result.generation.stats.cells).toBeGreaterThan(0);
+  expect(result.generation.stats.uncovered).toBeGreaterThan(0);
+  expect(result.generation.stats.cells + result.generation.stats.uncovered).toBe(1048576);
   expect(result.generation.repairs).toHaveLength(0);
   console.info(
     '1024×1024 generation:',
@@ -19,7 +21,8 @@ it('generates varied rectangles and masks across seeds', () => {
   let bent = 0;
   for (let seed = 0; seed < 20; seed++) {
     const result = generatePuzzle({ columns: 32, rows: 32, seed: String(seed) });
-    expect(result.generation.stats.cells).toBe(1024);
+    expect(result.generation.stats.cells).toBeGreaterThan(1024 * 0.9);
+    expect(result.generation.stats.cells + result.generation.stats.uncovered).toBe(1024);
     if (result.level.arrows.some((arrow) => arrow.points.length > 2)) bent++;
   }
   expect(bent).toBeGreaterThan(15);

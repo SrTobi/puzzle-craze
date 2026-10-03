@@ -2,15 +2,24 @@ import { CellGrid, checkDimensions } from '../game/grid';
 import { cells, parseLevel } from '../game/engine';
 import { PuzzleIndex } from '../game/puzzleIndex';
 import type { Arrow, ArrowColor, Level, Point } from '../game/types';
+import { Frontier } from './frontier';
 
-export const GENERATOR_VERSION = 1;
+export const GENERATOR_VERSION = 6;
+export type GeneratorDifficulty = 'easy' | 'hard' | 'super-hard';
+
+// More, shorter arrows create more individual dependencies to untangle.
+const DIFFICULTY_LENGTH: Record<GeneratorDifficulty, number> = {
+  easy: 18,
+  hard: 10,
+  'super-hard': 6,
+};
 export interface GeneratorInput {
   columns: number;
   rows: number;
   mask?: ArrayLike<number>;
   seed: string;
   name?: string;
-  length?: number;
+  difficulty?: GeneratorDifficulty;
   repair?: boolean;
   maxRepairs?: number;
 }
@@ -19,18 +28,20 @@ export interface GeneratedPuzzle {
   generation: {
     version: number;
     seed: string;
+    difficulty: GeneratorDifficulty;
     length: number;
     repairBudget: number;
     originalMask: string[];
     finalMask: string[];
     repairs: { point: Point; enabled: boolean }[];
+    uncovered: Point[];
     solution: string[];
     stats: {
       cells: number;
       arrows: number;
       initiallyFree: number;
       attempts: number;
-      fallback: boolean;
+      uncovered: number;
     };
   };
 }
@@ -47,29 +58,6 @@ function randomFor(seed: string) {
   };
 }
 
-/** Random-access set, with O(1) membership updates and sampling. */
-class Frontier {
-  values: number[] = [];
-  positions: Int32Array;
-  constructor(size: number) {
-    this.positions = new Int32Array(size).fill(-1);
-  }
-  set(value: number, present: boolean) {
-    const i = this.positions[value];
-    if (present && i < 0) {
-      this.positions[value] = this.values.length;
-      this.values.push(value);
-    } else if (!present && i >= 0) {
-      const last = this.values.pop()!;
-      if (i < this.values.length) {
-        this.values[i] = last;
-        this.positions[last] = i;
-      }
-      this.positions[value] = -1;
-    }
-  }
-}
-
 function carve(
   mask: Uint8Array,
   columns: number,
@@ -78,7 +66,7 @@ function carve(
   length: number,
 ) {
   const grid = new CellGrid(columns, rows, mask);
-  const frontier = new Frontier(mask.length * 4);
+  const frontier = new Frontier(columns, rows);
   const update = (p: number) => {
     if (p < 0) return;
     for (let d = 0; d < 4; d++) {
@@ -108,8 +96,8 @@ function carve(
           grid.neighbors(n).every((other) => other === p || other === alsoRemoved),
       );
   const paths: number[][] = [];
-  while (frontier.values.length) {
-    const code = frontier.values[Math.floor(random() * frontier.values.length)];
+  while (frontier.size) {
+    const code = frontier.pick(random)!;
     const head = Math.floor(code / 4),
       d = code % 4;
     const back = grid.adjacent(head, d ^ 1);
@@ -130,12 +118,8 @@ function carve(
         ? forced
         : grid.neighbors(tail).filter((p) => orphans(p).length <= 1);
       if (!options.length) break;
-      const delta = tail - path.at(-2)!;
-      const straight = options.find((p) => p - tail === delta);
-      const next =
-        straight !== undefined && random() < 0.65
-          ? straight
-          : options[Math.floor(random() * options.length)];
+      // Give straight steps and turns the same chance among valid continuations.
+      const next = options[Math.floor(random() * options.length)];
       forced = orphans(next);
       remove(next);
       path.push(next);
@@ -143,38 +127,6 @@ function carve(
     paths.push(path);
   }
   return { paths, remaining: grid.occupied, count: grid.count };
-}
-
-/** Full rectangles always have a simple solvable fallback, including odd and narrow boards. */
-function strips(columns: number, rows: number, random: () => number, length: number): number[][] {
-  const vertical = columns === 1 || (rows > 1 && random() < 0.5);
-  const span = vertical ? rows : columns,
-    lanes = vertical ? columns : rows;
-  const paths: number[][] = [];
-  for (let lane = 0; lane < lanes;) {
-    // Narrow serpentine bands make bent arrows, while all heads in a band face
-    // its already-cleared end. Other bands cannot intersect those exit rays.
-    let width = lanes === 1 ? 1 : Math.min(lanes - lane, random() < 0.25 ? 3 : 2);
-    if (lanes - lane - width === 1) width++;
-    const reverse = random() < 0.5;
-    const acrossReverse = random() < 0.5;
-    for (let at = 0; at < span;) {
-      let size = Math.min(span - at, Math.max(2, Math.round((length / width) * (0.5 + random()))));
-      if (span - at - size === 1) size++;
-      const path: number[] = [];
-      for (let across = 0; across < width; across++)
-        for (let i = 0; i < size; i++) {
-          const step = across % 2 ? size - 1 - i : i;
-          const p = reverse ? span - 1 - at - step : at + step;
-          const q = lane + (acrossReverse ? width - 1 - across : across);
-          path.push(vertical ? p * columns + q : q * columns + p);
-        }
-      paths.push(path);
-      at += size;
-    }
-    lane += width;
-  }
-  return paths;
 }
 
 function compress(path: number[], columns: number): Point[] {
@@ -194,9 +146,10 @@ export function generatePuzzle(
   checkDimensions(columns, rows);
   if (typeof seed !== 'string' || seed.length > 256)
     throw new Error('Use a seed of at most 256 characters.');
-  const length = input.length ?? 10;
-  if (!Number.isFinite(length) || length < 2 || length > 100)
-    throw new Error('Arrow length must be between 2 and 100.');
+  const difficulty = input.difficulty ?? 'hard';
+  if (!Object.hasOwn(DIFFICULTY_LENGTH, difficulty))
+    throw new Error('Choose a difficulty: easy, hard, or super-hard.');
+  const length = DIFFICULTY_LENGTH[difficulty];
   if (
     input.mask &&
     (input.mask.length !== columns * rows || Array.from(input.mask).some((n) => n !== 0 && n !== 1))
@@ -220,8 +173,8 @@ export function generatePuzzle(
   const random = randomFor(`${GENERATOR_VERSION}:${seed}`);
   let paths: number[][] | undefined;
   let best: ReturnType<typeof carve> | undefined;
+  let bestPartial: { paths: number[][]; mask: Uint8Array; originalCovered: number } | undefined;
   let attempts = 0,
-    fallback = false,
     edits = 0;
   // Exact-mask attempts come first. Repairs are bounded, deterministic, and recorded.
   for (let round = 0; round < 12; round++) {
@@ -237,13 +190,14 @@ export function generatePuzzle(
         break;
       }
       if (!best || candidate.count < best.count) best = candidate;
+      const originalCovered = candidate.paths.reduce(
+        (sum, path) => sum + path.reduce((covered, p) => covered + original[p], 0),
+        0,
+      );
+      if (originalCovered > (bestPartial?.originalCovered ?? 0))
+        bestPartial = { paths: candidate.paths, mask: mask.slice(), originalCovered };
     }
-    if (paths) break;
-    if (full) {
-      paths = strips(columns, rows, random, length);
-      fallback = true;
-      break;
-    }
+    if (paths || full) break;
     if (edits >= budget || !best) break;
     const remaining = new CellGrid(columns, rows, best.remaining);
     let changed = false;
@@ -271,9 +225,15 @@ export function generatePuzzle(
     }
     best = undefined;
   }
+  // Keep the best carving rather than replacing it with regular strips.
+  // Restore its mask too: later repair attempts may have changed the working mask.
+  if (!paths && bestPartial) {
+    paths = bestPartial.paths;
+    mask.set(bestPartial.mask);
+  }
   if (!paths?.length)
     throw new Error(
-      `Could not cover this shape within ${budget} point repairs. Try a larger image grid, a different seed, or a simpler outline.`,
+      `Could not place any arrows within ${budget} point repairs. Try a larger image grid, a different seed, or a simpler outline.`,
     );
   progress({ phase: 'Checking every arrow', fraction: 0.85 });
   const colors: ArrowColor[] = ['violet', 'coral', 'teal', 'gold', 'blue', 'pink'];
@@ -291,15 +251,18 @@ export function generatePuzzle(
     id: `generated-${seed}`,
     name: input.name || 'A fresh tangle',
     description: `${columns} × ${rows} · ${arrows.length.toLocaleString()} arrows · seed ${seed}`,
-    difficulty: 'medium',
+    difficulty,
     grid: { columns, rows },
     arrows,
   };
-  // Independent validation of geometry, exact coverage, and the recorded removal order.
+  // Validate non-overlapping coverage inside the selected mask and the removal order.
   const coverage = new Uint8Array(mask.length);
   for (const arrow of arrows) for (const [x, y] of cells(arrow)) coverage[y * columns + x]++;
-  if (coverage.some((v, p) => v !== mask[p]))
+  if (coverage.some((v, p) => v > 1 || (v > 0 && !mask[p])))
     throw new Error('Generation failed its coverage check.');
+  const uncovered: Point[] = [];
+  for (let p = 0; p < mask.length; p++)
+    if (mask[p] && !coverage[p]) uncovered.push([p % columns, Math.floor(p / columns)]);
   parseLevel(level);
   const verification = new PuzzleIndex(arrows, level.grid);
   const initiallyFree = arrows.filter((arrow) => !verification.hit(arrow)).length;
@@ -317,18 +280,20 @@ export function generatePuzzle(
     generation: {
       version: GENERATOR_VERSION,
       seed,
+      difficulty,
       length,
       repairBudget: budget,
       originalMask: serialize(original),
-      finalMask: serialize(mask),
+      finalMask: serialize(coverage),
       repairs,
+      uncovered,
       solution: arrows.map((arrow) => arrow.id),
       stats: {
-        cells: mask.reduce((a, b) => a + b, 0),
+        cells: coverage.reduce((a, b) => a + b, 0),
         arrows: arrows.length,
         initiallyFree,
         attempts,
-        fallback,
+        uncovered: uncovered.length,
       },
     },
   };

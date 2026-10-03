@@ -13,7 +13,7 @@ export interface Level {
   id: string;
   name: string;
   description: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard' | 'super-hard';
   grid: { columns: number; rows: number };
   arrows: readonly Arrow[];
 }
