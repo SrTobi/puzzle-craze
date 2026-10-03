@@ -6,6 +6,7 @@ import {
   Check,
   CircleHelp,
   Hand,
+  Grid2X2,
   Heart,
   HeartCrack,
   Lightbulb,
@@ -25,8 +26,10 @@ import {
 import { Board } from './components/Board';
 import { Modal } from './components/Modal';
 import { audio } from './game/audio';
-import { availableArrows, parseLevel } from './game/engine';
-import firstLight from './levels/first-light.json';
+import { availableArrows } from './game/engine';
+import { LevelPicker } from './components/LevelPicker';
+import { useCampaign } from './hooks/useCampaign';
+import { MAX_CAMPAIGN_LEVEL, tutorialStep } from './levels/campaign';
 import { MAX_ZOOM, useCamera } from './hooks/useCamera';
 import { usePuzzle } from './hooks/usePuzzle';
 import { Generator, downloadPuzzle } from './components/Generator';
@@ -38,7 +41,6 @@ import { GameBreadcrumb } from '../../../shared/components/GameBreadcrumb';
 import { links } from '../../../shared/links';
 import { boardFit } from './game/cameraBounds';
 
-const originalLevel = parseLevel(firstLight);
 const palette = ['#8270df', '#ef816e', '#43a99b', '#e5b247', '#639dd8', '#d87fa6'];
 
 function readMuted() {
@@ -50,36 +52,108 @@ function readMuted() {
 }
 
 export default function App() {
-  const [puzzle, setPuzzle] = useState<{
-    level: Level;
-    generated?: GeneratedPuzzle;
-    revision: number;
-  }>({ level: originalLevel, revision: 0 });
+  const campaign = useCampaign();
+  const { puzzle, pending, error } = campaign;
+  const [panel, setPanel] = useState<'levels' | 'custom' | null>(null);
+  const selectLevel = (number: number) => {
+    setPanel(null);
+    campaign.selectLevel(number);
+  };
+  const nextLabel =
+    puzzle.number === MAX_CAMPAIGN_LEVEL
+      ? 'Choose a level'
+      : puzzle.number
+        ? 'Next level'
+        : 'Continue levels';
   return (
-    <Game
-      key={puzzle.revision}
-      level={puzzle.level}
-      generated={puzzle.generated}
-      onGenerated={(generated) =>
-        setPuzzle((old) => ({ level: generated.level, generated, revision: old.revision + 1 }))
-      }
-      onOriginal={() => setPuzzle((old) => ({ level: originalLevel, revision: old.revision + 1 }))}
-    />
+    <>
+      <Game
+        key={puzzle.revision}
+        level={puzzle.level}
+        levelNumber={puzzle.number}
+        generated={puzzle.generated}
+        dialogOpen={Boolean(panel || pending || error)}
+        onPick={() => setPanel('levels')}
+        onNext={() => {
+          if (puzzle.number === MAX_CAMPAIGN_LEVEL) setPanel('levels');
+          else selectLevel(puzzle.number ? puzzle.number + 1 : campaign.progress.selected);
+        }}
+        nextLabel={nextLabel}
+        onComplete={campaign.complete}
+      />
+      {panel === 'levels' && (
+        <LevelPicker
+          selected={puzzle.number ?? campaign.progress.selected}
+          completed={campaign.progress.completed}
+          saved={campaign.saved}
+          onSelect={selectLevel}
+          onCustom={() => setPanel('custom')}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === 'custom' && (
+        <Generator
+          onClose={() => setPanel(null)}
+          onPlay={(generated) => {
+            setPanel(null);
+            campaign.playCustom(generated);
+          }}
+          onTutorial={() => selectLevel(1)}
+        />
+      )}
+      {pending && (
+        <Modal title={`Preparing level ${pending.number}`} onClose={campaign.cancel}>
+          <div className="generation-progress" role="status">
+            <progress value={pending.progress.fraction} max="1" />
+            <span>{pending.progress.phase}…</span>
+          </div>
+          <button className="secondary-button" onClick={campaign.cancel}>
+            Cancel
+          </button>
+        </Modal>
+      )}
+      {error && (
+        <Modal title={`Could not load level ${error.number}`} onClose={campaign.cancel}>
+          <p className="generation-error" role="alert">
+            {error.message}
+          </p>
+          <button className="primary-button" onClick={() => selectLevel(error.number)}>
+            Try again
+          </button>
+          <button
+            className="next-chapter"
+            onClick={() => {
+              campaign.cancel();
+              setPanel('levels');
+            }}
+          >
+            Choose a level
+          </button>
+        </Modal>
+      )}
+    </>
   );
 }
 
 function Game({
   level,
+  levelNumber,
   generated,
-  onGenerated,
-  onOriginal,
+  dialogOpen,
+  onPick,
+  onNext,
+  nextLabel,
+  onComplete,
 }: {
   level: Level;
+  levelNumber?: number;
   generated?: GeneratedPuzzle;
-  onGenerated: (puzzle: GeneratedPuzzle) => void;
-  onOriginal: () => void;
+  dialogOpen: boolean;
+  onPick: () => void;
+  onNext: () => void;
+  nextLabel: string;
+  onComplete: (number: number) => void;
 }) {
-  const [making, setMaking] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
@@ -171,8 +245,9 @@ function Game({
       setWin(true);
       setToast(null);
       audio.win();
+      if (levelNumber) onComplete(levelNumber);
     }
-  }, [removed.length, flights.length, level, lost]);
+  }, [removed.length, flights.length, level, lost, levelNumber, onComplete]);
 
   const restart = useCallback(() => {
     clearFeedback();
@@ -232,7 +307,7 @@ function Game({
         help ||
         win ||
         lost ||
-        making ||
+        dialogOpen ||
         (event.target instanceof HTMLElement &&
           (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) ||
             event.target.isContentEditable))
@@ -257,11 +332,12 @@ function Game({
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [giveHint, undo, restart, resetCamera, zoomAt, toggleFullscreen, help, win, lost, making]);
+  }, [giveHint, undo, restart, resetCamera, zoomAt, toggleFullscreen, help, win, lost, dialogOpen]);
 
   const freed = removed.length;
   const total = level.arrows.length;
   const isComplete = freed === total;
+  const tutorial = levelNumber === 1 ? tutorialStep(removed) : null;
 
   return (
     <main className="app">
@@ -287,13 +363,9 @@ function Game({
           </a>
         </GameBreadcrumb>
         <div className="header-actions">
-          <button
-            className="new-puzzle-button"
-            aria-label="New puzzle"
-            onClick={() => setMaking(true)}
-          >
-            <Sparkles size={17} />
-            <span>New puzzle</span>
+          <button className="new-puzzle-button" aria-label="Choose a level" onClick={onPick}>
+            <Grid2X2 size={17} />
+            <span>Levels</span>
           </button>
           {generated && (
             <button
@@ -334,7 +406,8 @@ function Game({
         <div className="level-bar">
           <div className="level-info">
             <h1>{level.name}</h1>
-            {generated && <p>{level.description}</p>}
+            {levelNumber === 1 && <p>Level 1 · Tutorial</p>}
+            {generated && !levelNumber && <p>{level.description}</p>}
           </div>
           <div className="progress-box" aria-label={`${freed} of ${total} arrows freed`}>
             <div
@@ -377,7 +450,7 @@ function Game({
             flights={flights}
             queued={queued}
             attempts={attempts}
-            hint={hint}
+            hint={hint ?? tutorial?.arrow ?? null}
             camera={camera}
             onTap={launch}
             reducedMotion={reducedMotion}
@@ -386,8 +459,8 @@ function Game({
             <div className="empty-board">
               <Sparkles size={36} />
               <h2>A little lighter.</h2>
-              <button className="primary-button" onClick={() => setMaking(true)}>
-                New puzzle <ArrowRight size={18} />
+              <button className="primary-button" onClick={onNext}>
+                {nextLabel} <ArrowRight size={18} />
               </button>
               <button className="next-chapter" onClick={restart}>
                 Play again
@@ -415,6 +488,8 @@ function Game({
                 {queued.length} {queued.length === 1 ? 'arrow waiting' : 'arrows waiting'}. Clear a
                 path to release {queued.length === 1 ? 'it' : 'them'}.
               </span>
+            ) : tutorial ? (
+              <span>{tutorial.message}</span>
             ) : freed === 0 ? (
               <span>Tap an arrow to launch it.</span>
             ) : null}
@@ -475,10 +550,6 @@ function Game({
           </div>
         </footer>
       </section>
-
-      {making && (
-        <Generator onClose={() => setMaking(false)} onPlay={onGenerated} onOriginal={onOriginal} />
-      )}
 
       {help && (
         <Modal title="A little untangling." onClose={() => setHelp(false)}>
@@ -546,7 +617,7 @@ function Game({
         </Modal>
       )}
 
-      {lost && !making && attempts.length === 0 && flights.length === 0 && (
+      {lost && !dialogOpen && attempts.length === 0 && flights.length === 0 && (
         <Modal
           title="A knot too many."
           onClose={() => {}}
@@ -565,8 +636,8 @@ function Game({
           <button className="primary-button" onClick={restart}>
             Try again <RotateCcw size={17} />
           </button>
-          <button className="secondary-button" onClick={() => setMaking(true)}>
-            New puzzle <Sparkles size={17} />
+          <button className="secondary-button" onClick={onPick}>
+            Choose a level <Grid2X2 size={17} />
           </button>
           <button
             className="continue-button"
@@ -582,7 +653,7 @@ function Game({
         </Modal>
       )}
 
-      {win && (
+      {win && !dialogOpen && (
         <Modal title="A little lighter." onClose={() => setWin(false)} className="win-modal">
           {!reducedMotion && (
             <div className="confetti" aria-hidden="true">
@@ -605,7 +676,9 @@ function Game({
           <div className="win-emblem">
             <Sparkles size={39} strokeWidth={1.6} />
           </div>
-          <span className="eyebrow">{generated ? 'YOUR TANGLE' : 'LEVEL 01'} · ALL CLEAR</span>
+          <span className="eyebrow">
+            {levelNumber ? `LEVEL ${levelNumber}` : 'CUSTOM PUZZLE'} · ALL CLEAR
+          </span>
           <p className="modal-lead">
             {total.toLocaleString()} arrows, a little patience, and a lovely bit of clarity.
           </p>
@@ -631,10 +704,10 @@ function Game({
             autoFocus
             onClick={() => {
               setWin(false);
-              setMaking(true);
+              onNext();
             }}
           >
-            New puzzle <ArrowRight size={17} />
+            {nextLabel} <ArrowRight size={17} />
           </button>
           <button className="next-chapter" onClick={restart}>
             Play again

@@ -24,11 +24,11 @@ export function downloadPuzzle(puzzle: GeneratedPuzzle) {
 export function Generator({
   onClose,
   onPlay,
-  onOriginal,
+  onTutorial,
 }: {
   onClose: () => void;
   onPlay: (puzzle: GeneratedPuzzle) => void;
-  onOriginal: () => void;
+  onTutorial: () => void;
 }) {
   const [shape, setShape] = useState<Shape | 'image'>('rectangle');
   const [columns, setColumns] = useState(24);
@@ -372,8 +372,8 @@ export function Generator({
           Start puzzle <ArrowRight size={18} />
         </button>
       </div>
-      <button className="original-level" onClick={onOriginal} disabled={Boolean(progress)}>
-        Return to First light
+      <button className="original-level" onClick={onTutorial} disabled={Boolean(progress)}>
+        Play tutorial
       </button>
       <p className="generator-note">
         Images stay on your device. Same seed and settings, same puzzle. Up to 1,024 × 1,024 points.

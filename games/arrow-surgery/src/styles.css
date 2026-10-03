@@ -1422,3 +1422,86 @@ kbd {
     justify-content: space-between;
   }
 }
+
+/* Numbered levels share the game's compact, paper-like dialogs. */
+.campaign-level-list {
+  display: grid;
+  gap: 6px;
+  max-height: min(45dvh, 400px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 3px;
+}
+.campaign-level-list button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #e5e4da;
+  border-radius: 12px;
+  text-align: left;
+}
+.campaign-level-list button:hover,
+.campaign-level-list button.selected {
+  background: #eee9fa;
+  border-color: #c9bce8;
+}
+.campaign-level-list button > span:nth-child(2) {
+  flex: 1;
+}
+.campaign-level-list strong,
+.campaign-level-list small {
+  display: block;
+}
+.campaign-level-list strong {
+  font-size: 14px;
+}
+.campaign-level-list small {
+  margin-top: 3px;
+  color: #737b6b;
+  font-size: 11px;
+}
+.campaign-number {
+  min-width: 32px;
+  color: #8270bf;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.campaign-level-list svg {
+  flex-shrink: 0;
+  color: #8270bf;
+}
+.campaign-pages,
+.campaign-jump {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.campaign-pages {
+  justify-content: space-between;
+}
+.campaign-pages button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 36px;
+  border-radius: 9px;
+  background: #efeee6;
+}
+.campaign-jump input {
+  min-width: 0;
+  flex: 1;
+  width: 80px;
+  padding: 10px;
+  border: 1px solid #d8ddcd;
+  border-radius: 9px;
+  background: #fffefa;
+  color: inherit;
+  font: inherit;
+}
+.campaign-custom {
+  width: 100%;
+  margin-top: 18px;
+}
