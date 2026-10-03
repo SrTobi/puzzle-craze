@@ -14,6 +14,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest",
+    "generate:logic-snake": "node games/logic-snake/scripts/generate.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -1,3 +1,4 @@
+import type { GenerationInfo } from '../generation/types';
 import type { Tutorial } from './tutorials';
 
 export type Cell = 'unknown' | 'empty' | 'snake' | 'head';
@@ -10,13 +11,20 @@ export interface Level {
   top: number;
   solution: Cell[];
   clues: number[];
+  /** Fixed empty cells, indexed by position, with their required region size. */
+  regionClues?: Record<number, number>;
   moves: number[];
   tutorial?: Tutorial;
+  generation?: GenerationInfo;
 }
 
 export const isSnake = (cell: Cell) => cell === 'snake' || cell === 'head';
+export const isFixedClue = (level: Level, index: number) =>
+  level.clues.includes(index) || level.regionClues?.[index] !== undefined;
 export const initialBoard = (level: Level): Cell[] =>
-  level.solution.map((cell, i) => (level.clues.includes(i) ? cell : 'unknown'));
+  level.solution.map((cell, i) =>
+    level.regionClues?.[i] !== undefined ? 'empty' : isFixedClue(level, i) ? cell : 'unknown',
+  );
 
 export function neighbors(level: Pick<Level, 'width' | 'height'>, index: number): number[] {
   const { width, height } = level;
@@ -31,7 +39,7 @@ export function neighbors(level: Pick<Level, 'width' | 'height'>, index: number)
 }
 
 export function markCell(level: Level, board: Cell[], index: number, tool: Tool): Cell[] {
-  if (index < 0 || index >= board.length || level.clues.includes(index)) return board;
+  if (index < 0 || index >= board.length || isFixedClue(level, index)) return board;
   const cell = tool === 'erase' || board[index] === tool ? 'unknown' : tool;
   if (board[index] === cell) return board;
   return board.map((previous, i) => (i === index ? cell : previous));
@@ -49,6 +57,12 @@ function analyzeBoard(level: Level, board: Cell[]) {
   const errors = new Set<number>();
   const messages = new Set<string>();
   const used = Array.from({ length: level.top }, () => 0);
+  for (const index of Object.keys(level.regionClues ?? {}).map(Number)) {
+    if (board[index] !== 'empty') {
+      errors.add(index);
+      messages.add('Numbered clues must remain empty.');
+    }
+  }
 
   // A region is only finished when no unknown cell touches it. Board edges are walls.
   board.forEach((cell, start) => {
@@ -79,7 +93,36 @@ function analyzeBoard(level: Level, board: Cell[]) {
           : `Two finished regions have size ${size}. Each size is needed once.`,
       );
     }
+    const targets = [
+      ...new Set(
+        region.cells.flatMap((i) =>
+          level.regionClues?.[i] === undefined ? [] : [level.regionClues[i]],
+        ),
+      ),
+    ];
+    const wrongClue =
+      targets.length > 1 ||
+      targets.some((target) => size > target || (region.closed && size !== target));
+    if (wrongClue) {
+      region.valid = false;
+      region.cells.forEach((i) => errors.add(i));
+      messages.add(
+        targets.length > 1
+          ? 'Clues with different numbers must be in separate empty regions.'
+          : `The region containing ${targets[0]} has ${size} cells. It must contain exactly ${targets[0]}.`,
+      );
+    }
   }
+
+  // A region with a misplaced numbered clue must not appear complete in the checklist.
+  used.forEach((count, index) => {
+    if (
+      count === 1 &&
+      !regions.some((region) => region.closed && region.valid && region.cells.length === index + 1)
+    ) {
+      used[index] = 0;
+    }
+  });
 
   const snakeCells = board.flatMap((cell, i) => (isSnake(cell) ? [i] : []));
   for (const index of snakeCells) {
@@ -144,6 +187,9 @@ function analyzeBoard(level: Level, board: Cell[]) {
 
 export function analyze(level: Level, board: Cell[]) {
   const current = analyzeBoard(level, board);
+  if (Object.keys(level.regionClues ?? {}).some((index) => board[Number(index)] !== 'empty')) {
+    return current;
+  }
   if (!current.snakeConnected) {
     if (current.connectedSnake.length > 0) {
       current.connectedSnake.forEach((i) => current.errors.add(i));
@@ -171,7 +217,9 @@ export function analyze(level: Level, board: Cell[]) {
     unknown: current.unknown,
     regionMismatch: true,
     messages: [
-      `The snake is connected, but the empty regions have sizes ${sizes.join(', ') || 'none'}. You need ${required}. Adjust the snake’s path.`,
+      completed.messages.length && Object.keys(level.regionClues ?? {}).length
+        ? `The snake is connected, but ${completed.messages[0][0].toLowerCase()}${completed.messages[0].slice(1)} Adjust the snake’s path.`
+        : `The snake is connected, but the empty regions have sizes ${sizes.join(', ') || 'none'}. You need ${required}. Adjust the snake’s path.`,
       'The endpoints are connected, but the puzzle is not solved.',
     ],
   };
@@ -180,7 +228,7 @@ export function analyze(level: Level, board: Cell[]) {
 // Hints use the source puzzle's recorded solve order, correcting mistakes first.
 export function nextHint(level: Level, board: Cell[]) {
   const order = [...new Set([...level.moves, ...board.map((_, i) => i)])].filter(
-    (i) => !level.clues.includes(i),
+    (i) => !isFixedClue(level, i),
   );
   const index =
     order.find((i) => board[i] !== 'unknown' && board[i] !== level.solution[i]) ??

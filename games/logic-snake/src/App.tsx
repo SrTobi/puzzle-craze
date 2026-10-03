@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {
   ArrowRight,
   Check,
@@ -26,6 +34,7 @@ import {
   analyze,
   historyReducer,
   initialBoard,
+  isFixedClue,
   markCell,
   nextHint,
   type Cell,
@@ -42,8 +51,9 @@ export default function App() {
   const [muted, setMuted] = useState(readMuted);
   const [saved, setSaved] = useState(true);
   const [picker, setPicker] = useState(false);
+  const selectedLevelRef = useRef<HTMLButtonElement>(null);
   const [help, setHelp] = useState(false);
-  const level = levels.find((level) => level.id === progress.selected)!;
+  const level = levels.find((level) => level.id === progress.selected) ?? levels[0];
   const index = levels.indexOf(level);
   useEffect(() => {
     try {
@@ -124,11 +134,16 @@ export default function App() {
         </p>
       )}
       {picker && (
-        <Dialog title="Choose a puzzle" onClose={() => setPicker(false)}>
+        <Dialog
+          title="Choose a puzzle"
+          onClose={() => setPicker(false)}
+          initialFocus={selectedLevelRef}
+        >
           <div className="snake-level-list">
             {levels.map((item) => (
               <button
                 key={item.id}
+                ref={item.id === level.id ? selectedLevelRef : undefined}
                 className={item.id === level.id ? 'selected' : ''}
                 onClick={() => selectLevel(item.id)}
                 aria-current={item.id === level.id ? 'true' : undefined}
@@ -137,7 +152,11 @@ export default function App() {
                 <span>
                   <strong>{item.name}</strong>
                   <small>
-                    {item.tutorial ? 'Tutorial · ' : ''}
+                    {item.tutorial
+                      ? 'Tutorial · '
+                      : Object.keys(item.regionClues ?? {}).length
+                        ? 'Number clues · '
+                        : ''}
                     {item.width} × {item.height} ·{' '}
                     {item.top === 0
                       ? 'Just connect'
@@ -195,8 +214,10 @@ export default function App() {
             <div>
               <h3>Fixed clues</h3>
               <p>
-                Locked cells are clues and cannot change. A number appears when an empty region is
-                fully surrounded by snake or the board edge. Coral marks a rule conflict.
+                Locked cells are clues and cannot change. A circled number fixes the size of the
+                empty region containing that cell, including the clue itself. Other numbers appear
+                when an empty region is fully surrounded by snake or the board edge. Coral marks a
+                rule conflict.
               </p>
             </div>
           </div>
@@ -277,7 +298,7 @@ function Game({
     setNotice('');
   }
   function mark(index: number, alternate = false) {
-    if (level.clues.includes(index)) {
+    if (isFixedClue(level, index)) {
       setNotice('This clue is fixed.');
       return;
     }
@@ -455,6 +476,12 @@ function Game({
             <Grid2X2 size={17} />
           </div>
           <p>{level.tutorial?.lesson ?? 'Leave one empty region of each size.'}</p>
+          {level.regionClues && (
+            <p className="snake-numbered-help">
+              A circled number belongs to an empty region of exactly that many cells, including the
+              numbered cell.
+            </p>
+          )}
           {level.top > 0 && (
             <>
               <div className="snake-region-list" aria-label="Required empty region sizes">

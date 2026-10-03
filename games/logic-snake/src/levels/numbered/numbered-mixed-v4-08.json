@@ -1,0 +1,361 @@
+{
+  "name": "An open question",
+  "generation": {
+    "version": 4,
+    "numberedClueChance": 0.5,
+    "seed": "mixed-v4-08",
+    "unique": true,
+    "maxAssumptionDepth": 1,
+    "requiredAssumptionDepth": 1,
+    "forcedMoves": 35,
+    "lookaheadMoves": 11,
+    "solverChecks": 42078,
+    "layoutChecks": 136594,
+    "clueTrials": 4,
+    "trace": [
+      {
+        "index": 26,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 28,
+        "cell": "snake",
+        "depth": 1,
+        "reason": "Assuming empty leads to a contradiction within depth 1."
+      },
+      {
+        "index": 21,
+        "cell": "snake",
+        "depth": 1,
+        "reason": "Assuming empty leads to a contradiction within depth 1."
+      },
+      {
+        "index": 0,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 29,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 35,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 42,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 43,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 44,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 7,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 15,
+        "cell": "snake",
+        "depth": 1,
+        "reason": "Assuming empty leads to a contradiction within depth 1."
+      },
+      {
+        "index": 32,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 23,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 14,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 22,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 37,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The numbered region must contain 4 cells."
+      },
+      {
+        "index": 38,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The numbered region must contain 4 cells."
+      },
+      {
+        "index": 39,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "An empty region would exceed its required size."
+      },
+      {
+        "index": 40,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 41,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The snake would branch or touch itself."
+      },
+      {
+        "index": 45,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 46,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 47,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The snake would branch or touch itself."
+      },
+      {
+        "index": 48,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 31,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 34,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The snake would branch or touch itself."
+      },
+      {
+        "index": 24,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 27,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 19,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "An empty region would exceed its required size."
+      },
+      {
+        "index": 20,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "An empty region would exceed its required size."
+      },
+      {
+        "index": 25,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "An empty region would exceed its required size."
+      },
+      {
+        "index": 13,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 16,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "Two finished empty regions would have the same size."
+      },
+      {
+        "index": 17,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The snake would branch or touch itself."
+      },
+      {
+        "index": 18,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 8,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 11,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The snake would branch or touch itself."
+      },
+      {
+        "index": 12,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "The snake would branch or touch itself."
+      },
+      {
+        "index": 6,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 5,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 4,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 3,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 1,
+        "cell": "empty",
+        "depth": 1,
+        "reason": "Assuming snake leads to a contradiction within depth 1."
+      },
+      {
+        "index": 2,
+        "cell": "empty",
+        "depth": 0,
+        "reason": "Two finished empty regions would have the same size."
+      },
+      {
+        "index": 9,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      },
+      {
+        "index": 10,
+        "cell": "snake",
+        "depth": 0,
+        "reason": "A snake cell could not connect to the path."
+      }
+    ]
+  },
+  "width": 7,
+  "height": 7,
+  "fields": {
+    "snake-head": "X",
+    "snake-body": "+",
+    "empty": "."
+  },
+  "level": ["...++++", ".+++..+", ".+..+++", "++.++..", "+.X+.X.", "+...++.", "+++++.."],
+  "initial_open": [
+    [2, 4],
+    [5, 4],
+    [1, 5]
+  ],
+  "moves": [
+    [5, 3],
+    [0, 4],
+    [0, 3],
+    [0, 0],
+    [1, 4],
+    [0, 5],
+    [0, 6],
+    [1, 6],
+    [2, 6],
+    [0, 1],
+    [1, 2],
+    [4, 4],
+    [2, 3],
+    [0, 2],
+    [1, 3],
+    [2, 5],
+    [3, 5],
+    [4, 5],
+    [5, 5],
+    [6, 5],
+    [3, 6],
+    [4, 6],
+    [5, 6],
+    [6, 6],
+    [3, 4],
+    [6, 4],
+    [3, 3],
+    [6, 3],
+    [5, 2],
+    [6, 2],
+    [4, 3],
+    [6, 1],
+    [2, 2],
+    [3, 2],
+    [4, 2],
+    [1, 1],
+    [4, 1],
+    [5, 1],
+    [6, 0],
+    [5, 0],
+    [4, 0],
+    [3, 0],
+    [1, 0],
+    [2, 0],
+    [2, 1],
+    [3, 1]
+  ],
+  "region_clues": [[1, 5, 4]],
+  "empty_policy": {
+    "Ascending": {
+      "top": 6
+    }
+  }
+}

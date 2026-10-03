@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyze, historyReducer, initialBoard, markCell } from './engine';
-import { levels, levelNumber, puzzleLevels } from './levels';
+import { levels, levelNumber, puzzleLevels, numberedLevels } from './levels';
 import { tutorialLevels, tutorialStep } from './tutorials';
 import { decodeProgress } from './storage';
 
@@ -58,7 +58,7 @@ describe('tutorial progression', () => {
     expect(tutorialStep(level, initialBoard(level))?.position).toBe(0);
   });
   it('introduces beginners to tutorials and keeps existing saves with continuous level numbering', () => {
-    expect(levels).toHaveLength(16);
+    expect(levels).toHaveLength(16 + numberedLevels.length);
     expect(decodeProgress(null, levels).selected).toBe(tutorialLevels[0].id);
     const old = puzzleLevels[0];
     const board = initialBoard(old);

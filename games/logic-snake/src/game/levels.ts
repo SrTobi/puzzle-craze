@@ -1,15 +1,8 @@
-import type { Cell, Level } from './engine';
+import type { Level } from './engine';
 import { tutorialLevels } from './tutorials';
 
-interface SourceLevel {
-  width: number;
-  height: number;
-  fields: Record<string, string>;
-  level: string[];
-  initial_open: [number, number][];
-  moves: [number, number][];
-  empty_policy: { Ascending: { top: number } };
-}
+import { loadLevel, type SourceLevel } from './level-format';
+
 const sources = import.meta.glob<SourceLevel>('../levels/*.json', {
   eager: true,
   import: 'default',
@@ -34,27 +27,28 @@ export const puzzleLevels: Level[] = Object.entries(sources)
   .sort(([a], [b]) =>
     a.endsWith('/level.json') ? -1 : b.endsWith('/level.json') ? 1 : a.localeCompare(b),
   )
-  .map(([path, source], index) => ({
-    id: path.split('/').at(-1)!.replace('.json', ''),
-    name: names[index],
-    width: source.width,
-    height: source.height,
-    top: source.empty_policy.Ascending.top,
-    solution: source.level
-      .join('')
-      .split('')
-      .map((char): Cell =>
-        char === source.fields['snake-head']
-          ? 'head'
-          : char === source.fields['snake-body']
-            ? 'snake'
-            : 'empty',
-      ),
-    clues: source.initial_open.map(([x, y]) => y * source.width + x),
-    moves: source.moves.map(([x, y]) => y * source.width + x),
-  }));
+  .map(([path, source], index) =>
+    loadLevel(source, path.split('/').at(-1)!.replace('.json', ''), names[index]),
+  );
 
-export const levels = [...tutorialLevels, ...puzzleLevels];
+const numberedSources = import.meta.glob<SourceLevel>('../levels/numbered/*.json', {
+  eager: true,
+  import: 'default',
+});
+export const numberedLevels = Object.entries(numberedSources)
+  .sort(
+    ([a, sourceA], [b, sourceB]) =>
+      (sourceA.generation?.version ?? 0) - (sourceB.generation?.version ?? 0) || a.localeCompare(b),
+  )
+  .map(([path, source], index) =>
+    loadLevel(
+      source,
+      path.split('/').at(-1)!.replace('.json', ''),
+      `Numbered regions ${index + 1}`,
+    ),
+  );
+
+export const levels = [...tutorialLevels, ...puzzleLevels, ...numberedLevels];
 
 export function levelNumber(level: Level) {
   return String(levels.indexOf(level) + 1).padStart(2, '0');

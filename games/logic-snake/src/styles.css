@@ -1028,3 +1028,24 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+.region-clue-number {
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font:
+    700 clamp(14px, 2.5vw, 22px) 'Manrope',
+    sans-serif;
+  color: #65774f;
+  background: #fffdf5;
+}
+.is-invalid .region-clue-number {
+  color: #b9604b;
+}
+.snake-aside .snake-numbered-help {
+  margin-top: 12px;
+  color: #65774f;
+}

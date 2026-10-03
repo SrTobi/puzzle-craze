@@ -1,4 +1,4 @@
-import { initialBoard, type Cell, type Level } from './engine';
+import { initialBoard, isFixedClue, type Cell, type Level } from './engine';
 
 export const STORAGE_KEY = 'puzzle-craze.logic-snake.v1';
 export interface Progress {
@@ -21,7 +21,7 @@ export function decodeProgress(raw: string | null, levels: Level[]): Progress {
       ) {
         const initial = initialBoard(level);
         fallback.boards[level.id] = board.map((cell, i) =>
-          level.clues.includes(i) ? initial[i] : cell === 'head' ? 'unknown' : cell,
+          isFixedClue(level, i) ? initial[i] : cell === 'head' ? 'unknown' : cell,
         );
       }
     }

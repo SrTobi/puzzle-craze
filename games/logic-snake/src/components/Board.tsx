@@ -1,7 +1,14 @@
 import { useRef } from 'react';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { ArrowDown, LockKeyhole } from 'lucide-react';
-import { isSnake, neighbors, type Cell, type Level, type Region } from '../game/engine';
+import {
+  isSnake,
+  isFixedClue,
+  neighbors,
+  type Cell,
+  type Level,
+  type Region,
+} from '../game/engine';
 
 export function Board({
   level,
@@ -52,12 +59,18 @@ export function Board({
       }
     >
       {board.map((cell, i) => {
-        const locked = level.clues.includes(i);
+        const locked = isFixedClue(level, i);
         const region = regions.find((region) => region.cells.includes(i));
         const invalid = errors.has(i);
+        const requiredSize = level.regionClues?.[i];
         const snake = isSnake(cell);
         const adjacent = neighbors(level, i).filter((n) => isSnake(board[n]));
-        const description = cell === 'head' ? 'endpoint' : cell;
+        const description =
+          requiredSize !== undefined
+            ? `empty, must belong to a region of ${requiredSize} cells`
+            : cell === 'head'
+              ? 'endpoint'
+              : cell;
         return (
           <button
             key={i}
@@ -103,7 +116,9 @@ export function Board({
             )}
             {cell === 'unknown' && <span className="cell-dot" />}
             {cell === 'empty' &&
-              (region?.closed ? (
+              (requiredSize !== undefined ? (
+                <span className="region-clue-number">{requiredSize}</span>
+              ) : region?.closed ? (
                 <span className="region-size">{region.cells.length}</span>
               ) : (
                 <span className="empty-mark">×</span>
