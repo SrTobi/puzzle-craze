@@ -25,7 +25,7 @@ export default function App() {
         <section className="game-collection" id="games" aria-labelledby="games-title">
           <div className="collection-heading">
             <h2 id="games-title">Find your next little obsession</h2>
-            <span>THE COLLECTION / 01–03</span>
+            <span>THE COLLECTION / 01–04</span>
           </div>
           <div className="game-cards">
             <a className="game-card arrow-card" href={links.arrowSurgery}>
@@ -122,6 +122,64 @@ export default function App() {
                 </p>
                 <span className="card-action">
                   Play Water Sort <ArrowRight size={17} />
+                </span>
+              </div>
+            </a>
+            <a className="game-card sudoku-card" href={links.sudoku}>
+              <div className="game-art sudoku-art" aria-hidden="true">
+                <span className="game-status">Ready to play</span>
+                <svg viewBox="0 0 440 220" fill="none">
+                  <g transform="translate(140 24) rotate(-6 80 80)">
+                    <rect
+                      width="160"
+                      height="160"
+                      rx="9"
+                      fill="#fffdf6"
+                      stroke="#8c9a77"
+                      strokeWidth="2"
+                    />
+                    <path d="M40 0v160M120 0v160M0 40h160M0 120h160" stroke="#d8ddca" />
+                    <path d="M80 0v160M0 80h160" stroke="#8c9a77" strokeWidth="2.5" />
+                    <rect x="82" y="2" width="36" height="36" fill="#ead8d1" />
+                    <rect x="42" y="82" width="36" height="36" fill="#dce7ce" />
+                    <rect x="122" y="122" width="36" height="36" rx="5" fill="#e6dcf0" />
+                    {[
+                      [20, 28, '1'],
+                      [100, 28, '3'],
+                      [60, 68, '4'],
+                      [140, 68, '2'],
+                      [20, 108, '2'],
+                      [100, 108, '4'],
+                      [60, 148, '1'],
+                      [140, 148, '3'],
+                    ].map(([x, y, value]) => (
+                      <text
+                        key={`${x}-${y}`}
+                        x={x}
+                        y={y}
+                        textAnchor="middle"
+                        fill="#7d8e6b"
+                        fontSize="25"
+                        fontFamily="Manrope, sans-serif"
+                      >
+                        {value}
+                      </text>
+                    ))}
+                  </g>
+                </svg>
+                <span className="art-caption">FAMILIAR NUMBERS. NEW POSSIBILITIES.</span>
+              </div>
+              <div className="card-copy">
+                <p className="site-kicker">04 / A little more logic</p>
+                <h3>
+                  Sudoku <MoveUpRight size={25} />
+                </h3>
+                <p>
+                  Start with the familiar. Discover new sizes, winding regions, and color
+                  connections. Then make a puzzle of your own.
+                </p>
+                <span className="card-action">
+                  Play Sudoku <ArrowRight size={17} />
                 </span>
               </div>
             </a>

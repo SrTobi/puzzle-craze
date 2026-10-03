@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "generate:logic-snake": "node games/logic-snake/scripts/generate.ts",
     "generate:water-sort": "node scripts/generate-water-sort.mjs",
+    "sudoku:levels": "node games/sudoku/scripts/build-levels.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
